@@ -76,13 +76,9 @@
                         <button onclick="editQuestion({{ $item->id }}, '{{ $item->type }}')" class="p-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition duration-200" title="Edit">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <form action="{{ route('teacher.exams.items.destroy', [$exam->id, $item->id]) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this question?');">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition duration-200" title="Delete">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </form>
+                        <button onclick="showDeleteModal({{ $item->id }}, '{{ addslashes($item->question) }}')" class="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition duration-200" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -236,6 +232,43 @@
     </div>
 </div>
 
+<!-- Delete Confirmation Modal -->
+<div id="deleteQuestionModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <div class="flex items-center justify-center mb-4">
+                <div class="bg-red-100 rounded-full p-3">
+                    <i class="fas fa-exclamation-triangle text-red-600 text-3xl"></i>
+                </div>
+            </div>
+
+            <h3 class="text-xl font-bold text-gray-900 text-center mb-2">Delete Question?</h3>
+            <p class="text-gray-600 text-center mb-4">
+                Are you sure you want to delete this question? This action cannot be undone.
+            </p>
+
+            <div class="bg-gray-50 rounded-lg p-3 mb-6">
+                <p class="text-sm text-gray-700 italic" id="deleteQuestionText"></p>
+            </div>
+
+            <form id="deleteQuestionForm" method="POST">
+                @csrf
+                @method('DELETE')
+                <div class="flex space-x-3">
+                    <button type="button" onclick="hideDeleteModal()"
+                        class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition duration-200">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition duration-200">
+                        <i class="fas fa-trash mr-2"></i>Delete
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
     // Store items data for editing
     const examItems = @json($examItems);
@@ -248,6 +281,16 @@
     function hideAddQuestionModal() {
         document.getElementById('addQuestionModal').classList.add('hidden');
         hideAllQuestionForms();
+    }
+
+    function showDeleteModal(itemId, questionText) {
+        document.getElementById('deleteQuestionText').textContent = questionText;
+        document.getElementById('deleteQuestionForm').action = `/teacher/exams/${examId}/items/${itemId}?tab=items`;
+        document.getElementById('deleteQuestionModal').classList.remove('hidden');
+    }
+
+    function hideDeleteModal() {
+        document.getElementById('deleteQuestionModal').classList.add('hidden');
     }
 
     function hideAllQuestionForms() {
@@ -321,14 +364,39 @@
             item.options.forEach((option, index) => {
                 const optionDiv = document.createElement('div');
                 optionDiv.className = 'flex items-center space-x-2';
-                const isChecked = option.correct ? 'checked' : '';
-                const text = option.text || option;
-                optionDiv.innerHTML = `
-                    <input type="checkbox" name="options[${index}][correct]" value="1" ${isChecked} class="w-5 h-5 text-indigo-600">
-                    <input type="text" name="options[${index}][text]" placeholder="Option ${index + 1}" value="${text}" required
-                        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                    ${index > 1 ? '<button type="button" onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-700"><i class="fas fa-times"></i></button>' : ''}
-                `;
+
+                // Create checkbox
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.name = `options[${index}][correct]`;
+                checkbox.value = '1';
+                checkbox.className = 'w-5 h-5 text-indigo-600';
+                if (option.correct) {
+                    checkbox.checked = true;
+                }
+
+                // Create text input
+                const textInput = document.createElement('input');
+                textInput.type = 'text';
+                textInput.name = `options[${index}][text]`;
+                textInput.placeholder = `Option ${index + 1}`;
+                textInput.value = option.text || option || '';
+                textInput.required = true;
+                textInput.className = 'flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500';
+
+                optionDiv.appendChild(checkbox);
+                optionDiv.appendChild(textInput);
+
+                // Add remove button for options beyond the first two
+                if (index > 1) {
+                    const removeBtn = document.createElement('button');
+                    removeBtn.type = 'button';
+                    removeBtn.className = 'text-red-600 hover:text-red-700';
+                    removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                    removeBtn.onclick = function() { this.parentElement.remove(); };
+                    optionDiv.appendChild(removeBtn);
+                }
+
                 container.appendChild(optionDiv);
                 editMcqOptionIndex++;
             });
@@ -370,15 +438,38 @@
             item.pairs.forEach((pair, index) => {
                 const pairDiv = document.createElement('div');
                 pairDiv.className = 'flex items-center space-x-3';
-                const left = pair.left || '';
-                const right = pair.right || '';
-                pairDiv.innerHTML = `
-                    <input type="text" name="pairs[${index}][left]" placeholder="Item ${index + 1}" value="${left}" required
-                        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                    <input type="text" name="pairs[${index}][right]" placeholder="Match ${index + 1}" value="${right}" required
-                        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                    ${index > 1 ? '<button type="button" onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-700"><i class="fas fa-times"></i></button>' : ''}
-                `;
+
+                // Create left input
+                const leftInput = document.createElement('input');
+                leftInput.type = 'text';
+                leftInput.name = `pairs[${index}][left]`;
+                leftInput.placeholder = `Item ${index + 1}`;
+                leftInput.value = pair.left || '';
+                leftInput.required = true;
+                leftInput.className = 'flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500';
+
+                // Create right input
+                const rightInput = document.createElement('input');
+                rightInput.type = 'text';
+                rightInput.name = `pairs[${index}][right]`;
+                rightInput.placeholder = `Match ${index + 1}`;
+                rightInput.value = pair.right || '';
+                rightInput.required = true;
+                rightInput.className = 'flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500';
+
+                pairDiv.appendChild(leftInput);
+                pairDiv.appendChild(rightInput);
+
+                // Add remove button for pairs beyond the first two
+                if (index > 1) {
+                    const removeBtn = document.createElement('button');
+                    removeBtn.type = 'button';
+                    removeBtn.className = 'text-red-600 hover:text-red-700';
+                    removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                    removeBtn.onclick = function() { this.parentElement.remove(); };
+                    pairDiv.appendChild(removeBtn);
+                }
+
                 container.appendChild(pairDiv);
                 editMatchingPairIndex++;
             });

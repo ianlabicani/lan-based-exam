@@ -35,7 +35,7 @@ class ExamItemController extends Controller
             'answer' => 'nullable|string',
             'options' => 'nullable|array',
             'options.*.text' => 'required_with:options|string',
-            'options.*.correct' => 'required_with:options|boolean',
+            'options.*.correct' => 'nullable',
             'pairs' => 'nullable|array',
             'pairs.*.left' => 'required_with:pairs|string',
             'pairs.*.right' => 'required_with:pairs|string',
@@ -129,7 +129,7 @@ class ExamItemController extends Controller
             'answer' => 'nullable|string',
             'options' => 'nullable|array',
             'options.*.text' => 'required_with:options|string',
-            'options.*.correct' => 'required_with:options|boolean',
+            'options.*.correct' => 'nullable',
             'pairs' => 'nullable|array',
             'pairs.*.left' => 'required_with:pairs|string',
             'pairs.*.right' => 'required_with:pairs|string',
@@ -240,22 +240,32 @@ class ExamItemController extends Controller
     {
         $options = $request->input('options', []);
 
-        if (empty($options) || !is_array($options)) {
+        if (empty($options) || ! is_array($options)) {
             return ['_error' => redirect()->back()
                 ->withErrors(['options' => 'Options are required for multiple choice questions.'])
                 ->withInput()];
         }
 
-        $hasCorrect = collect($options)->contains(fn($o) => isset($o['correct']) && $o['correct']);
+        // Normalize the correct field - convert "1" string to true boolean
+        $normalizedOptions = [];
+        foreach ($options as $option) {
+            $normalizedOptions[] = [
+                'text' => $option['text'] ?? '',
+                'correct' => isset($option['correct']) && ($option['correct'] === '1' || $option['correct'] === 1 || $option['correct'] === true),
+            ];
+        }
 
-        if (!$hasCorrect) {
+        $hasCorrect = collect($normalizedOptions)->contains(fn ($o) => $o['correct'] === true);
+
+        if (! $hasCorrect) {
             return ['_error' => redirect()->back()
                 ->withErrors(['options' => 'At least one option must be marked correct.'])
                 ->withInput()];
         }
 
-        $data['options'] = $options;
-        unset($data['answer']);
+        $data['options'] = $normalizedOptions;
+        unset($data['answer'], $data['pairs']);
+
         return $data;
     }
 
@@ -273,14 +283,14 @@ class ExamItemController extends Controller
             $value = 'true';
         } elseif ($value === false) {
             $value = 'false';
-        } elseif (!is_string($value)) {
+        } elseif (! is_string($value)) {
             return ['_error' => redirect()->back()
                 ->withErrors(['answer' => 'Answer must be the string "true" or "false".'])
                 ->withInput()];
         }
 
         $normalized = strtolower(trim((string) $value));
-        if (!in_array($normalized, ['true', 'false'], true)) {
+        if (! in_array($normalized, ['true', 'false'], true)) {
             return ['_error' => redirect()->back()
                 ->withErrors(['answer' => 'Answer must be the string "true" or "false".'])
                 ->withInput()];
@@ -301,6 +311,7 @@ class ExamItemController extends Controller
                 ->withInput()];
         }
         unset($data['answer'], $data['options']);
+
         return $data;
     }
 
@@ -312,6 +323,7 @@ class ExamItemController extends Controller
                 ->withInput()];
         }
         unset($data['answer'], $data['options'], $data['pairs']);
+
         return $data;
     }
 
@@ -323,6 +335,7 @@ class ExamItemController extends Controller
                 ->withInput()];
         }
         unset($data['answer'], $data['options'], $data['pairs']);
+
         return $data;
     }
 
@@ -330,13 +343,14 @@ class ExamItemController extends Controller
     {
         $pairs = $request->input('pairs');
         // Make pairs optional/nullable. If provided, ensure it's an array; otherwise set to null.
-        if ($pairs !== null && !is_array($pairs)) {
+        if ($pairs !== null && ! is_array($pairs)) {
             return ['_error' => redirect()->back()
                 ->withErrors(['pairs' => 'Pairs must be an array when provided.'])
                 ->withInput()];
         }
         $data['pairs'] = $pairs ?: null;
         unset($data['answer'], $data['options'], $data['expected_answer']);
+
         return $data;
     }
 }
