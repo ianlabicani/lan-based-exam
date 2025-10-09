@@ -20,10 +20,10 @@ class ExamItemController extends Controller
             $query->where('teacher_id', Auth::id());
         })->findOrFail($examId);
 
-        // Check if exam is not active or archived
-        if (in_array($exam->status, ['active', 'archived'])) {
+        // Check if exam can be edited (only draft and ready status)
+        if (!$exam->canBeEdited()) {
             return redirect()->back()
-                ->with('error', 'Cannot add items to an active or archived exam.');
+                ->with('error', 'Cannot add items to this exam. Only exams in Draft or Ready status can be edited.');
         }
 
         $payload = $request->validate([
@@ -114,10 +114,10 @@ class ExamItemController extends Controller
         $examItem = ExamItem::where('exam_id', $examId)
             ->findOrFail($itemId);
 
-        // Check if exam is not active or archived
-        if (in_array($exam->status, ['active', 'archived'])) {
+        // Check if exam can be edited (only draft and ready status)
+        if (!$exam->canBeEdited()) {
             return redirect()->back()
-                ->with('error', 'Cannot modify items of an active or archived exam.');
+                ->with('error', 'Cannot modify items of this exam. Only exams in Draft or Ready status can be edited.');
         }
 
         $payload = $request->validate([
@@ -216,10 +216,10 @@ class ExamItemController extends Controller
         $examItem = ExamItem::where('exam_id', $examId)
             ->findOrFail($itemId);
 
-        // Check if exam is not active or archived
-        if (in_array($exam->status, ['active', 'archived'])) {
+        // Check if exam can be edited (only draft and ready status)
+        if (!$exam->canBeEdited()) {
             return redirect()->back()
-                ->with('error', 'Cannot delete items of an active or archived exam.');
+                ->with('error', 'Cannot delete items from this exam. Only exams in Draft or Ready status can be edited.');
         }
 
         $examItem->delete();

@@ -65,4 +65,16 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Exam::class, 'exam_teacher', 'teacher_id', 'exam_id')->withTimestamps();
     }
+
+    public function takenExams()
+    {
+        return $this->hasMany(TakenExam::class);
+    }
+
+    public function examsTaken()
+    {
+        return $this->belongsToMany(Exam::class, 'taken_exams', 'user_id', 'exam_id')
+            ->withPivot(['started_at', 'submitted_at', 'total_points'])
+            ->withTimestamps();
+    }
 }

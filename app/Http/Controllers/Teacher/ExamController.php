@@ -58,7 +58,6 @@ class ExamController extends Controller
             'ends_at' => 'required|date|after:starts_at',
             'year' => 'required|string',
             'sections' => 'required', // string like "E,F" or array
-            'status' => 'in:draft,active,archived,published',
             'total_points' => 'integer|min:0',
             'tos' => 'required|array',
         ]);
@@ -88,7 +87,7 @@ class ExamController extends Controller
             'ends_at' => $validated['ends_at'],
             'year' => $validated['year'],
             'sections' => $sections,
-            'status' => $validated['status'] ?? 'draft',
+            'status' => 'draft', // Always create as draft
             'total_points' => $validated['total_points'] ?? 0,
             'tos' => $validated['tos'],
         ];
@@ -148,7 +147,7 @@ class ExamController extends Controller
             'ends_at' => 'sometimes|date|after:starts_at',
             'year' => 'sometimes|string',
             'sections' => 'sometimes', // string or array
-            'status' => 'sometimes|in:draft,published,archived',
+            'status' => 'sometimes|in:draft,ready,published,ongoing,closed,graded,archived',
             'total_points' => 'sometimes|integer|min:0',
             'tos' => 'sometimes|array',
         ]);
@@ -189,13 +188,17 @@ class ExamController extends Controller
         })->findOrFail($id);
 
         $validated = $request->validate([
-            'status' => 'required|in:draft,published,archived',
+            'status' => 'required|in:draft,ready,published,ongoing,closed,graded,archived',
         ]);
 
-        $exam->update(['status' => $validated['status']]);
+        // Use the transition method to ensure valid state changes
+        if ($exam->transitionTo($validated['status'])) {
+            return redirect()->route('teacher.exams.show', $exam->id)
+                ->with('success', 'Exam status updated successfully!');
+        }
 
         return redirect()->route('teacher.exams.show', $exam->id)
-            ->with('success', 'Exam status updated successfully!');
+            ->with('error', 'Invalid status transition. Please follow the exam lifecycle.');
     }
 
     /**

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Teacher\ExamController;
 use App\Http\Controllers\Teacher\ExamItemController;
+use App\Http\Controllers\Teacher\TakenExamController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->prefix('teacher')->name('teacher.')->group(function () {
@@ -25,6 +26,11 @@ Route::middleware(['auth', 'verified'])->prefix('teacher')->name('teacher.')->gr
         Route::post('/{examId}/items', [ExamItemController::class, 'store'])->name('items.store');
         Route::put('/{examId}/items/{itemId}', [ExamItemController::class, 'update'])->name('items.update');
         Route::delete('/{examId}/items/{itemId}', [ExamItemController::class, 'destroy'])->name('items.destroy');
+
+        // Taken Exams Routes
+        Route::get('/{examId}/taken-exams', [TakenExamController::class, 'index'])->name('takenExams.index');
+        Route::get('/{examId}/taken-exams/{takenExamId}', [TakenExamController::class, 'show'])->name('takenExams.show');
+        Route::patch('/{examId}/taken-exams/{takenExamId}/answers/{answerId}/points', [TakenExamController::class, 'updatePoints'])->name('takenExams.updatePoints');
     });
 
     // Analytics Route

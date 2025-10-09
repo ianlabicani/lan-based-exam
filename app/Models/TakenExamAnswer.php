@@ -1,0 +1,127 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class TakenExamAnswer extends Model
+{
+    protected $fillable = [
+        'taken_exam_id',
+        'exam_item_id',
+        'answer',
+        'points_earned',
+    ];
+
+    protected $casts = [
+        'points_earned' => 'integer',
+    ];
+
+    /**
+     * Get the taken exam that owns this answer.
+     */
+    public function takenExam(): BelongsTo
+    {
+        return $this->belongsTo(TakenExam::class);
+    }
+
+    /**
+     * Get the exam item (question) this answer belongs to.
+     */
+    public function item(): BelongsTo
+    {
+        return $this->belongsTo(ExamItem::class, 'exam_item_id');
+    }
+
+    /**
+     * Get the exam item (alias).
+     */
+    public function examItem(): BelongsTo
+    {
+        return $this->belongsTo(ExamItem::class, 'exam_item_id');
+    }
+
+    /**
+     * Check if the answer is correct based on the exam item.
+     */
+    public function isCorrect(): ?bool
+    {
+        if (!$this->item) {
+            return null;
+        }
+
+        $correctAnswer = $this->getCorrectAnswer();
+
+        if ($correctAnswer === null || $correctAnswer === 'Manual grading required') {
+            return null;
+        }
+
+        return $this->checkAnswer($correctAnswer);
+    }
+
+    /**
+     * Get the correct answer for this item.
+     */
+    private function getCorrectAnswer()
+    {
+        $item = $this->item;
+
+        switch ($item->type) {
+            case 'mcq':
+                $options = collect($item->options ?? []);
+                $correctIndex = $options->search(function ($opt) {
+                    return is_array($opt)
+                        ? (!empty($opt['correct']))
+                        : (!empty($opt->correct));
+                });
+                return $correctIndex !== false ? $correctIndex : null;
+
+            case 'truefalse':
+                return $item->answer;
+
+            case 'matching':
+                return $item->pairs;
+
+            case 'fillblank':
+            case 'fill_blank':
+            case 'shortanswer':
+                return $item->expected_answer;
+
+            case 'essay':
+                return 'Manual grading required';
+
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Check if student answer matches correct answer.
+     */
+    private function checkAnswer($correctAnswer): bool
+    {
+        $item = $this->item;
+
+        switch ($item->type) {
+            case 'mcq':
+                return (int) $this->answer === (int) $correctAnswer;
+
+            case 'truefalse':
+                $expected = strtolower(trim((string) $correctAnswer));
+                $student = strtolower(trim((string) $this->answer));
+                return $expected === $student;
+
+            case 'matching':
+                return $this->answer === $correctAnswer;
+
+            case 'fillblank':
+            case 'fill_blank':
+            case 'shortanswer':
+                return strtolower(trim((string) $this->answer)) === strtolower(trim((string) $correctAnswer));
+
+            default:
+                return false;
+        }
+    }
+}
