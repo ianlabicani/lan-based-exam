@@ -1,55 +1,96 @@
 <section class="space-y-6">
-    <header>
-        <h2 class="text-lg font-medium text-gray-900">
-            {{ __('Delete Account') }}
+    <header class="border-b border-gray-200 pb-4">
+        <h2 class="text-xl font-bold text-gray-900">
+            <i class="fas fa-trash-alt text-red-600 mr-2"></i>Delete Account
         </h2>
-
-        <p class="mt-1 text-sm text-gray-600">
-            {{ __('Once your account is deleted, all of its resources and data will be permanently deleted. Before deleting your account, please download any data or information that you wish to retain.') }}
+        <p class="mt-2 text-sm text-gray-600">
+            Once your account is deleted, all of its resources and data will be permanently deleted. Before deleting your account, please download any data or information that you wish to retain.
         </p>
     </header>
 
-    <x-danger-button
-        x-data=""
-        x-on:click.prevent="$dispatch('open-modal', 'confirm-user-deletion')"
-    >{{ __('Delete Account') }}</x-danger-button>
+    <button
+        onclick="showDeleteAccountModal()"
+        class="px-6 py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 focus:ring-4 focus:ring-red-300 transition duration-200 flex items-center space-x-2"
+    >
+        <i class="fas fa-exclamation-triangle"></i>
+        <span>Delete Account</span>
+    </button>
+</section>
 
-    <x-modal name="confirm-user-deletion" :show="$errors->userDeletion->isNotEmpty()" focusable>
-        <form method="post" action="{{ route('profile.destroy') }}" class="p-6">
+<!-- Delete Account Modal -->
+<div id="deleteAccountModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6">
+        <form method="post" action="{{ route('profile.destroy') }}">
             @csrf
             @method('delete')
 
-            <h2 class="text-lg font-medium text-gray-900">
-                {{ __('Are you sure you want to delete your account?') }}
-            </h2>
+            <div class="text-center mb-6">
+                <div class="bg-red-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-exclamation-triangle text-3xl text-red-600"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-2">Delete Account?</h3>
+                <p class="text-gray-600">
+                    Are you sure you want to delete your account?
+                </p>
+            </div>
 
-            <p class="mt-1 text-sm text-gray-600">
-                {{ __('Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.') }}
-            </p>
+            <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p class="text-sm text-red-800">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.
+                </p>
+            </div>
 
-            <div class="mt-6">
-                <x-input-label for="password" value="{{ __('Password') }}" class="sr-only" />
-
-                <x-text-input
+            <div class="mb-6">
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-lock mr-2 text-gray-500"></i>Password
+                </label>
+                <input
                     id="password"
                     name="password"
                     type="password"
-                    class="mt-1 block w-3/4"
-                    placeholder="{{ __('Password') }}"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition duration-200"
+                    placeholder="Enter your password to confirm"
                 />
-
-                <x-input-error :messages="$errors->userDeletion->get('password')" class="mt-2" />
+                @if($errors->userDeletion->has('password'))
+                    <p class="mt-2 text-sm text-red-600 flex items-center">
+                        <i class="fas fa-exclamation-circle mr-1"></i>{{ $errors->userDeletion->first('password') }}
+                    </p>
+                @endif
             </div>
 
-            <div class="mt-6 flex justify-end">
-                <x-secondary-button x-on:click="$dispatch('close')">
-                    {{ __('Cancel') }}
-                </x-secondary-button>
-
-                <x-danger-button class="ms-3">
-                    {{ __('Delete Account') }}
-                </x-danger-button>
+            <div class="flex space-x-3">
+                <button
+                    type="button"
+                    onclick="hideDeleteAccountModal()"
+                    class="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition duration-200"
+                >
+                    Cancel
+                </button>
+                <button
+                    type="submit"
+                    class="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition duration-200"
+                >
+                    Yes, Delete Account
+                </button>
             </div>
         </form>
-    </x-modal>
-</section>
+    </div>
+</div>
+
+<script>
+    function showDeleteAccountModal() {
+        document.getElementById('deleteAccountModal').classList.remove('hidden');
+    }
+
+    function hideDeleteAccountModal() {
+        document.getElementById('deleteAccountModal').classList.add('hidden');
+    }
+
+    // Show modal if there are validation errors
+    @if($errors->userDeletion->isNotEmpty())
+        document.addEventListener('DOMContentLoaded', function() {
+            showDeleteAccountModal();
+        });
+    @endif
+</script>

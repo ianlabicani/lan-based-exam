@@ -1,11 +1,10 @@
 <section>
-    <header>
-        <h2 class="text-lg font-medium text-gray-900">
-            {{ __('Profile Information') }}
+    <header class="border-b border-gray-200 pb-4">
+        <h2 class="text-xl font-bold text-gray-900">
+            <i class="fas fa-user-circle text-indigo-600 mr-2"></i>Profile Information
         </h2>
-
-        <p class="mt-1 text-sm text-gray-600">
-            {{ __("Update your account's profile information and email address.") }}
+        <p class="mt-2 text-sm text-gray-600">
+            Update your account's profile information and email address.
         </p>
     </header>
 
@@ -17,47 +16,84 @@
         @csrf
         @method('patch')
 
+        <!-- Name -->
         <div>
-            <x-input-label for="name" :value="__('Name')" />
-            <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $user->name)" required autofocus autocomplete="name" />
-            <x-input-error class="mt-2" :messages="$errors->get('name')" />
+            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                <i class="fas fa-user mr-2 text-gray-500"></i>Name
+            </label>
+            <input
+                id="name"
+                name="name"
+                type="text"
+                value="{{ old('name', $user->name) }}"
+                required
+                autofocus
+                autocomplete="name"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
+            />
+            @error('name')
+                <p class="mt-2 text-sm text-red-600 flex items-center">
+                    <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
+                </p>
+            @enderror
         </div>
 
+        <!-- Email -->
         <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user->email)" required autocomplete="username" />
-            <x-input-error class="mt-2" :messages="$errors->get('email')" />
+            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                <i class="fas fa-envelope mr-2 text-gray-500"></i>Email Address
+            </label>
+            <input
+                id="email"
+                name="email"
+                type="email"
+                value="{{ old('email', $user->email) }}"
+                required
+                autocomplete="username"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
+            />
+            @error('email')
+                <p class="mt-2 text-sm text-red-600 flex items-center">
+                    <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
+                </p>
+            @enderror
 
             @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
-                <div>
-                    <p class="text-sm mt-2 text-gray-800">
-                        {{ __('Your email address is unverified.') }}
-
-                        <button form="send-verification" class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            {{ __('Click here to re-send the verification email.') }}
-                        </button>
+                <div class="mt-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p class="text-sm text-yellow-800 flex items-start">
+                        <i class="fas fa-exclamation-triangle mt-0.5 mr-2 flex-shrink-0"></i>
+                        <span>
+                            Your email address is unverified.
+                            <button form="send-verification" class="underline text-yellow-900 hover:text-yellow-700 font-medium">
+                                Click here to re-send the verification email.
+                            </button>
+                        </span>
                     </p>
 
                     @if (session('status') === 'verification-link-sent')
-                        <p class="mt-2 font-medium text-sm text-green-600">
-                            {{ __('A new verification link has been sent to your email address.') }}
+                        <p class="mt-2 text-sm text-green-700 flex items-center">
+                            <i class="fas fa-check-circle mr-1"></i>
+                            A new verification link has been sent to your email address.
                         </p>
                     @endif
                 </div>
             @endif
         </div>
 
-        <div class="flex items-center gap-4">
-            <x-primary-button>{{ __('Save') }}</x-primary-button>
+        <!-- Save Button -->
+        <div class="flex items-center gap-4 pt-4">
+            <button
+                type="submit"
+                class="px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-300 transition duration-200 flex items-center space-x-2"
+            >
+                <i class="fas fa-save"></i>
+                <span>Save Changes</span>
+            </button>
 
             @if (session('status') === 'profile-updated')
-                <p
-                    x-data="{ show: true }"
-                    x-show="show"
-                    x-transition
-                    x-init="setTimeout(() => show = false, 2000)"
-                    class="text-sm text-gray-600"
-                >{{ __('Saved.') }}</p>
+                <p class="text-sm text-green-600 flex items-center animate-fade-in">
+                    <i class="fas fa-check-circle mr-1"></i>Saved successfully!
+                </p>
             @endif
         </div>
     </form>
