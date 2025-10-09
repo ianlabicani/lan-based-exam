@@ -40,12 +40,16 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             <i class="fas fa-signal text-indigo-600 mr-2"></i>Difficulty *
                         </label>
-                        <select name="level" required
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        <input type="hidden" name="level" id="editShortAnswerLevel">
+                        <select disabled
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed">
                             <option value="easy">Easy</option>
                             <option value="moderate" selected>Moderate</option>
                             <option value="difficult">Difficult</option>
                         </select>
+                        <p class="text-xs text-gray-500 mt-1">
+                            <i class="fas fa-lock mr-1"></i>Difficulty level cannot be changed
+                        </p>
                     </div>
                 </div>
 
@@ -81,7 +85,12 @@ function setEditShortAnswerAction(examId, itemId) {
 function populateEditShortAnswerForm(item) {
     document.querySelector('#editShortAnswerQuestionForm textarea[name="question"]').value = item.question || '';
     document.querySelector('#editShortAnswerQuestionForm input[name="points"]').value = item.points || 1;
-    document.querySelector('#editShortAnswerQuestionForm select[name="level"]').value = item.level || 'moderate';
+
+    // Set both the hidden input and the disabled select
+    const level = item.level || 'moderate';
+    document.querySelector('#editShortAnswerLevel').value = level;
+    document.querySelector('#editShortAnswerQuestionForm select[disabled]').value = level;
+
     document.querySelector('#editShortAnswerQuestionForm textarea[name="expected_answer"]').value = item.expected_answer || '';
 }
 </script>

@@ -40,12 +40,16 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             <i class="fas fa-signal text-indigo-600 mr-2"></i>Difficulty *
                         </label>
-                        <select name="level" required
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        <input type="hidden" name="level" id="editTrueFalseLevel">
+                        <select disabled
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed">
                             <option value="easy">Easy</option>
                             <option value="moderate" selected>Moderate</option>
                             <option value="difficult">Difficult</option>
                         </select>
+                        <p class="text-xs text-gray-500 mt-1">
+                            <i class="fas fa-lock mr-1"></i>Difficulty level cannot be changed
+                        </p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -82,7 +86,12 @@ function setEditTrueFalseAction(examId, itemId) {
 function populateEditTrueFalseForm(item) {
     document.querySelector('#editTrueFalseQuestionForm textarea[name="question"]').value = item.question || '';
     document.querySelector('#editTrueFalseQuestionForm input[name="points"]').value = item.points || 1;
-    document.querySelector('#editTrueFalseQuestionForm select[name="level"]').value = item.level || 'moderate';
+
+    // Set both the hidden input and the disabled select
+    const level = item.level || 'moderate';
+    document.querySelector('#editTrueFalseLevel').value = level;
+    document.querySelector('#editTrueFalseQuestionForm select[disabled]').value = level;
+
     document.querySelector('#editTrueFalseQuestionForm select[name="answer"]').value = item.answer || 'true';
 }
 </script>

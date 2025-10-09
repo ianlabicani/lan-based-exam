@@ -21,7 +21,7 @@ class ExamItemController extends Controller
         })->findOrFail($examId);
 
         // Check if exam can be edited (only draft and ready status)
-        if (!$exam->canBeEdited()) {
+        if (! $exam->canBeEdited()) {
             return redirect()->back()
                 ->with('error', 'Cannot add items to this exam. Only exams in Draft or Ready status can be edited.');
         }
@@ -115,14 +115,13 @@ class ExamItemController extends Controller
             ->findOrFail($itemId);
 
         // Check if exam can be edited (only draft and ready status)
-        if (!$exam->canBeEdited()) {
+        if (! $exam->canBeEdited()) {
             return redirect()->back()
                 ->with('error', 'Cannot modify items of this exam. Only exams in Draft or Ready status can be edited.');
         }
 
         $payload = $request->validate([
             'type' => 'sometimes|string|in:mcq,truefalse,fillblank,shortanswer,essay,matching',
-            'level' => 'sometimes|string|in:easy,moderate,difficult',
             'question' => 'sometimes|string',
             'points' => 'sometimes|integer|min:1',
             'expected_answer' => 'nullable|string',
@@ -181,7 +180,7 @@ class ExamItemController extends Controller
 
         $updateData = [
             'type' => $type,
-            'level' => $data['level'] ?? $examItem->level,
+            'level' => $examItem->level,
             'question' => $data['question'] ?? $examItem->question,
             'points' => $data['points'] ?? $examItem->points,
             'expected_answer' => $data['expected_answer'] ?? null,
@@ -217,7 +216,7 @@ class ExamItemController extends Controller
             ->findOrFail($itemId);
 
         // Check if exam can be edited (only draft and ready status)
-        if (!$exam->canBeEdited()) {
+        if (! $exam->canBeEdited()) {
             return redirect()->back()
                 ->with('error', 'Cannot delete items from this exam. Only exams in Draft or Ready status can be edited.');
         }
