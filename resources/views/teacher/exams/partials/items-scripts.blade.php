@@ -2,8 +2,15 @@
     // Store items data for editing
     const examItems = @json($examItems);
     const examId = {{ $exam->id }};
+    let selectedLevel = 'moderate'; // Default level
 
     function showAddQuestionModal() {
+        selectedLevel = 'moderate';
+        document.getElementById('addQuestionModal').classList.remove('hidden');
+    }
+
+    function showAddQuestionModalForLevel(level) {
+        selectedLevel = level;
         document.getElementById('addQuestionModal').classList.remove('hidden');
     }
 
@@ -30,7 +37,17 @@
 
     function showQuestionForm(type) {
         hideAllQuestionForms();
-        document.getElementById(type + 'QuestionForm').classList.remove('hidden');
+        const formElement = document.getElementById(type + 'QuestionForm');
+        formElement.classList.remove('hidden');
+
+        // Set the level select dropdown to the selected level
+        const levelSelect = formElement.querySelector('select[name="level"]');
+        if (levelSelect) {
+            levelSelect.value = selectedLevel;
+            // Make the level field readonly by styling (since select can't be truly readonly)
+            levelSelect.style.pointerEvents = 'none';
+            levelSelect.style.backgroundColor = '#f3f4f6';
+        }
     }
 
     function editQuestion(itemId, type) {
