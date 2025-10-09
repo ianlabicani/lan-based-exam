@@ -79,6 +79,7 @@
 
 <script>
 let editMatchingPairIndex = 2;
+
 function addEditMatchingPair() {
     const container = document.getElementById('editMatchingPairsContainer');
     const pairDiv = document.createElement('div');
@@ -98,5 +99,57 @@ function addEditMatchingPair() {
 
 function setEditMatchingAction(examId, itemId) {
     document.getElementById('editMatchingForm').action = `/teacher/exams/${examId}/items/${itemId}?tab=items`;
+}
+
+function populateEditMatchingForm(item) {
+    document.querySelector('#editMatchingQuestionForm textarea[name="question"]').value = item.question || '';
+    document.querySelector('#editMatchingQuestionForm input[name="points"]').value = item.points || 1;
+    document.querySelector('#editMatchingQuestionForm select[name="level"]').value = item.level || 'moderate';
+
+    // Clear and populate pairs
+    const container = document.getElementById('editMatchingPairsContainer');
+    container.innerHTML = '';
+    editMatchingPairIndex = 0;
+
+    if (item.pairs && item.pairs.length > 0) {
+        item.pairs.forEach((pair, index) => {
+            const pairDiv = document.createElement('div');
+            pairDiv.className = 'flex items-center space-x-3';
+
+            // Create left input
+            const leftInput = document.createElement('input');
+            leftInput.type = 'text';
+            leftInput.name = `pairs[${index}][left]`;
+            leftInput.placeholder = `Item ${index + 1}`;
+            leftInput.value = pair.left || '';
+            leftInput.required = true;
+            leftInput.className = 'flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500';
+
+            // Create right input
+            const rightInput = document.createElement('input');
+            rightInput.type = 'text';
+            rightInput.name = `pairs[${index}][right]`;
+            rightInput.placeholder = `Match ${index + 1}`;
+            rightInput.value = pair.right || '';
+            rightInput.required = true;
+            rightInput.className = 'flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500';
+
+            pairDiv.appendChild(leftInput);
+            pairDiv.appendChild(rightInput);
+
+            // Add remove button for pairs beyond the first two
+            if (index > 1) {
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'text-red-600 hover:text-red-700';
+                removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                removeBtn.onclick = function() { this.parentElement.remove(); };
+                pairDiv.appendChild(removeBtn);
+            }
+
+            container.appendChild(pairDiv);
+            editMatchingPairIndex++;
+        });
+    }
 }
 </script>

@@ -77,4 +77,11 @@
 function setEditShortAnswerAction(examId, itemId) {
     document.getElementById('editShortAnswerForm').action = `/teacher/exams/${examId}/items/${itemId}?tab=items`;
 }
+
+function populateEditShortAnswerForm(item) {
+    document.querySelector('#editShortAnswerQuestionForm textarea[name="question"]').value = item.question || '';
+    document.querySelector('#editShortAnswerQuestionForm input[name="points"]').value = item.points || 1;
+    document.querySelector('#editShortAnswerQuestionForm select[name="level"]').value = item.level || 'moderate';
+    document.querySelector('#editShortAnswerQuestionForm textarea[name="expected_answer"]').value = item.expected_answer || '';
+}
 </script>

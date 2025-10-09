@@ -81,4 +81,11 @@
 function setEditFillBlankAction(examId, itemId) {
     document.getElementById('editFillBlankForm').action = `/teacher/exams/${examId}/items/${itemId}?tab=items`;
 }
+
+function populateEditFillBlankForm(item) {
+    document.querySelector('#editFillBlankQuestionForm textarea[name="question"]').value = item.question || '';
+    document.querySelector('#editFillBlankQuestionForm input[name="points"]').value = item.points || 1;
+    document.querySelector('#editFillBlankQuestionForm select[name="level"]').value = item.level || 'moderate';
+    document.querySelector('#editFillBlankQuestionForm textarea[name="expected_answer"]').value = item.expected_answer || '';
+}
 </script>

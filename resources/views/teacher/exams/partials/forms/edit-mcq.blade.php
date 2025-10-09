@@ -84,6 +84,7 @@
 
 <script>
 let editMcqOptionIndex = 2;
+
 function addEditMcqOption() {
     const container = document.getElementById('editMcqOptionsContainer');
     const optionDiv = document.createElement('div');
@@ -100,8 +101,60 @@ function addEditMcqOption() {
     editMcqOptionIndex++;
 }
 
-// Update form action when editing
 function setEditMcqAction(examId, itemId) {
     document.getElementById('editMcqForm').action = `/teacher/exams/${examId}/items/${itemId}?tab=items`;
+}
+
+function populateEditMcqForm(item) {
+    document.querySelector('#editMcqQuestionForm textarea[name="question"]').value = item.question || '';
+    document.querySelector('#editMcqQuestionForm input[name="points"]').value = item.points || 1;
+    document.querySelector('#editMcqQuestionForm select[name="level"]').value = item.level || 'moderate';
+
+    // Clear and populate options
+    const container = document.getElementById('editMcqOptionsContainer');
+    container.innerHTML = '';
+    editMcqOptionIndex = 0;
+
+    if (item.options && item.options.length > 0) {
+        item.options.forEach((option, index) => {
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'flex items-center space-x-2';
+
+            // Create checkbox
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.name = `options[${index}][correct]`;
+            checkbox.value = '1';
+            checkbox.className = 'w-5 h-5 text-indigo-600';
+            if (option.correct) {
+                checkbox.checked = true;
+            }
+
+            // Create text input
+            const textInput = document.createElement('input');
+            textInput.type = 'text';
+            textInput.name = `options[${index}][text]`;
+            textInput.placeholder = `Option ${index + 1}`;
+            textInput.value = option.text || option || '';
+            textInput.required = true;
+            textInput.className = 'flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500';
+
+            optionDiv.appendChild(checkbox);
+            optionDiv.appendChild(textInput);
+
+            // Add remove button for options beyond the first two
+            if (index > 1) {
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'text-red-600 hover:text-red-700';
+                removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                removeBtn.onclick = function() { this.parentElement.remove(); };
+                optionDiv.appendChild(removeBtn);
+            }
+
+            container.appendChild(optionDiv);
+            editMcqOptionIndex++;
+        });
+    }
 }
 </script>

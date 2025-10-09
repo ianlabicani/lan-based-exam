@@ -77,4 +77,11 @@
 function setEditEssayAction(examId, itemId) {
     document.getElementById('editEssayForm').action = `/teacher/exams/${examId}/items/${itemId}?tab=items`;
 }
+
+function populateEditEssayForm(item) {
+    document.querySelector('#editEssayQuestionForm textarea[name="question"]').value = item.question || '';
+    document.querySelector('#editEssayQuestionForm input[name="points"]').value = item.points || 10;
+    document.querySelector('#editEssayQuestionForm select[name="level"]').value = item.level || 'moderate';
+    document.querySelector('#editEssayQuestionForm textarea[name="expected_answer"]').value = item.expected_answer || '';
+}
 </script>

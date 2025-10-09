@@ -78,4 +78,11 @@
 function setEditTrueFalseAction(examId, itemId) {
     document.getElementById('editTrueFalseForm').action = `/teacher/exams/${examId}/items/${itemId}?tab=items`;
 }
+
+function populateEditTrueFalseForm(item) {
+    document.querySelector('#editTrueFalseQuestionForm textarea[name="question"]').value = item.question || '';
+    document.querySelector('#editTrueFalseQuestionForm input[name="points"]').value = item.points || 1;
+    document.querySelector('#editTrueFalseQuestionForm select[name="level"]').value = item.level || 'moderate';
+    document.querySelector('#editTrueFalseQuestionForm select[name="answer"]').value = item.answer || 'true';
+}
 </script>
