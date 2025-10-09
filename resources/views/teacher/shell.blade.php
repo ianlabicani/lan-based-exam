@@ -21,13 +21,13 @@
                     <a href="{{ route('teacher.dashboard') }}" class="px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium transition duration-200 {{ request()->routeIs('teacher.dashboard') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                         <i class="fas fa-home mr-2"></i>Dashboard
                     </a>
-                    <a href="" class="px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium transition duration-200 {{ request()->routeIs('teacher.exams.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                    <a href="{{ route('teacher.exams.index') }}" class="px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium transition duration-200 {{ request()->routeIs('teacher.exams.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                         <i class="fas fa-file-alt mr-2"></i>Exams
                     </a>
-                    <a href="" class="px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium transition duration-200 {{ request()->routeIs('teacher.analytics') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                    <a href="{{ route('teacher.analytics') }}" class="px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium transition duration-200 {{ request()->routeIs('teacher.analytics') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                         <i class="fas fa-chart-line mr-2"></i>Analytics
                     </a>
-                    <a href="" class="relative px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium transition duration-200 {{ request()->routeIs('teacher.grading') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                    <a href="{{ route('teacher.grading') }}" class="relative px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium transition duration-200 {{ request()->routeIs('teacher.grading') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                         <i class="fas fa-tasks mr-2"></i>Grading
                         <span class="absolute -top-1 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">8</span>
                     </a>
@@ -154,13 +154,13 @@
             <a href="{{ route('teacher.dashboard') }}" class="block px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium {{ request()->routeIs('teacher.dashboard') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                 <i class="fas fa-home mr-2"></i>Dashboard
             </a>
-            <a href="" class="block px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium {{ request()->routeIs('teacher.exams.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+            <a href="{{ route('teacher.exams.index') }}" class="block px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium {{ request()->routeIs('teacher.exams.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                 <i class="fas fa-file-alt mr-2"></i>Exams
             </a>
-            <a href="" class="block px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium {{ request()->routeIs('teacher.analytics') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+            <a href="{{ route('teacher.analytics') }}" class="block px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium {{ request()->routeIs('teacher.analytics') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                 <i class="fas fa-chart-line mr-2"></i>Analytics
             </a>
-            <a href="" class="block px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium {{ request()->routeIs('teacher.grading') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+            <a href="{{ route('teacher.grading') }}" class="block px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium {{ request()->routeIs('teacher.grading') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                 <i class="fas fa-tasks mr-2"></i>Grading
                 <span class="ml-2 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">8</span>
             </a>

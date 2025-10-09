@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('exam_id')->constrained()->onDelete('cascade');
             $table->enum('type', ['mcq', 'truefalse', 'essay', 'fillblank', 'shortanswer', 'matching']);
+            $table->enum('level', ['easy', 'moderate', 'difficult'])->nullable();
             $table->text('question');
             $table->integer('points');
             $table->text('expected_answer')->nullable();

@@ -3,85 +3,6 @@
 @section('teacher-content')
 
 @php
-    // Mock data for exams list
-    $exams = [
-        [
-            'id' => 1,
-            'title' => 'Midterm Examination - Data Structures',
-            'description' => 'Comprehensive midterm covering arrays, linked lists, stacks, queues, and trees',
-            'status' => 'published',
-            'start_time' => '2025-10-15 09:00:00',
-            'end_time' => '2025-10-15 12:00:00',
-            'duration' => 120,
-            'total_items' => 50,
-            'total_points' => 100,
-            'takers_count' => 45,
-            'completed_count' => 38,
-            'average_score' => 85.5,
-            'created_at' => '2025-10-01'
-        ],
-        [
-            'id' => 2,
-            'title' => 'Quiz 3 - Algorithms and Complexity',
-            'description' => 'Weekly quiz on sorting algorithms and Big-O notation',
-            'status' => 'published',
-            'start_time' => '2025-10-12 14:00:00',
-            'end_time' => '2025-10-12 15:00:00',
-            'duration' => 60,
-            'total_items' => 30,
-            'total_points' => 50,
-            'takers_count' => 42,
-            'completed_count' => 42,
-            'average_score' => 78.3,
-            'created_at' => '2025-10-05'
-        ],
-        [
-            'id' => 3,
-            'title' => 'Final Exam - Database Systems',
-            'description' => 'Comprehensive final exam covering SQL, normalization, and transactions',
-            'status' => 'draft',
-            'start_time' => '2025-10-20 10:00:00',
-            'end_time' => '2025-10-20 13:00:00',
-            'duration' => 180,
-            'total_items' => 75,
-            'total_points' => 150,
-            'takers_count' => 0,
-            'completed_count' => 0,
-            'average_score' => 0,
-            'created_at' => '2025-10-08'
-        ],
-        [
-            'id' => 4,
-            'title' => 'Weekly Assessment - Web Development',
-            'description' => 'Assessment covering HTML, CSS, and JavaScript fundamentals',
-            'status' => 'published',
-            'start_time' => '2025-10-10 13:00:00',
-            'end_time' => '2025-10-10 14:00:00',
-            'duration' => 45,
-            'total_items' => 20,
-            'total_points' => 30,
-            'takers_count' => 38,
-            'completed_count' => 35,
-            'average_score' => 92.1,
-            'created_at' => '2025-10-03'
-        ],
-        [
-            'id' => 5,
-            'title' => 'Pop Quiz - Object-Oriented Programming',
-            'description' => 'Quick assessment on OOP principles and design patterns',
-            'status' => 'archived',
-            'start_time' => '2025-09-28 11:00:00',
-            'end_time' => '2025-09-28 11:30:00',
-            'duration' => 30,
-            'total_items' => 15,
-            'total_points' => 20,
-            'takers_count' => 40,
-            'completed_count' => 40,
-            'average_score' => 88.7,
-            'created_at' => '2025-09-25'
-        ]
-    ];
-
     $statusFilter = request('status', 'all');
 @endphp
 
@@ -139,20 +60,20 @@
 
         <!-- Exams Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            @foreach($exams as $exam)
-                @if($statusFilter === 'all' || $exam['status'] === $statusFilter)
+            @forelse($exams as $exam)
+                @if($statusFilter === 'all' || $exam->status === $statusFilter)
                 <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition duration-300 overflow-hidden">
                     <!-- Exam Header -->
                     <div class="p-6 border-b border-gray-200">
                         <div class="flex items-start justify-between mb-3">
                             <div class="flex-1">
                                 <div class="flex items-center space-x-2 mb-2">
-                                    <h3 class="text-xl font-bold text-gray-900">{{ $exam['title'] }}</h3>
-                                    @if($exam['status'] === 'published')
+                                    <h3 class="text-xl font-bold text-gray-900">{{ $exam->title }}</h3>
+                                    @if($exam->status === 'published')
                                         <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
                                             <i class="fas fa-check-circle"></i> Published
                                         </span>
-                                    @elseif($exam['status'] === 'draft')
+                                    @elseif($exam->status === 'draft')
                                         <span class="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-semibold rounded-full">
                                             <i class="fas fa-pencil-alt"></i> Draft
                                         </span>
@@ -162,7 +83,7 @@
                                         </span>
                                     @endif
                                 </div>
-                                <p class="text-sm text-gray-600">{{ $exam['description'] }}</p>
+                                <p class="text-sm text-gray-600">{{ $exam->description ?? 'No description provided' }}</p>
                             </div>
                         </div>
 
@@ -170,80 +91,77 @@
                         <div class="grid grid-cols-2 gap-4 mt-4">
                             <div class="flex items-center text-sm text-gray-600">
                                 <i class="fas fa-calendar text-indigo-600 mr-2"></i>
-                                <span>{{ date('M d, Y g:i A', strtotime($exam['start_time'])) }}</span>
+                                <span>{{ $exam->starts_at->format('M d, Y g:i A') }}</span>
                             </div>
                             <div class="flex items-center text-sm text-gray-600">
-                                <i class="fas fa-clock text-indigo-600 mr-2"></i>
-                                <span>{{ $exam['duration'] }} minutes</span>
+                                <i class="fas fa-calendar-check text-indigo-600 mr-2"></i>
+                                <span>{{ $exam->ends_at->format('M d, Y g:i A') }}</span>
                             </div>
                             <div class="flex items-center text-sm text-gray-600">
                                 <i class="fas fa-question-circle text-indigo-600 mr-2"></i>
-                                <span>{{ $exam['total_items'] }} questions</span>
+                                <span>{{ $exam->items->count() }} questions</span>
                             </div>
                             <div class="flex items-center text-sm text-gray-600">
                                 <i class="fas fa-star text-indigo-600 mr-2"></i>
-                                <span>{{ $exam['total_points'] }} points</span>
+                                <span>{{ $exam->total_points }} points</span>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Statistics -->
-                    @if($exam['status'] === 'published' || $exam['status'] === 'archived')
-                    <div class="bg-gray-50 px-6 py-4">
-                        <div class="grid grid-cols-3 gap-4">
-                            <div class="text-center">
-                                <p class="text-xs text-gray-500 mb-1">Takers</p>
-                                <p class="text-lg font-bold text-gray-900">{{ $exam['takers_count'] }}</p>
-                            </div>
-                            <div class="text-center">
-                                <p class="text-xs text-gray-500 mb-1">Completed</p>
-                                <p class="text-lg font-bold text-green-600">{{ $exam['completed_count'] }}</p>
-                            </div>
-                            <div class="text-center">
-                                <p class="text-xs text-gray-500 mb-1">Avg Score</p>
-                                <p class="text-lg font-bold text-indigo-600">{{ $exam['average_score'] }}%</p>
-                            </div>
-                        </div>
-                    </div>
-                    @endif
 
                     <!-- Actions -->
                     <div class="px-6 py-4 bg-white border-t border-gray-200">
                         <div class="flex items-center justify-between">
                             <span class="text-xs text-gray-500">
-                                <i class="fas fa-calendar-plus mr-1"></i>Created {{ date('M d, Y', strtotime($exam['created_at'])) }}
+                                <i class="fas fa-calendar-plus mr-1"></i>Created {{ $exam->created_at->format('M d, Y') }}
                             </span>
                             <div class="flex items-center space-x-2">
-                                <a href="{{ route('teacher.exams.show', $exam['id']) }}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition duration-200">
+                                <a href="{{ route('teacher.exams.show', $exam->id) }}" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition duration-200">
                                     <i class="fas fa-eye mr-1"></i>View
                                 </a>
-                                @if($exam['status'] === 'draft')
-                                <a href="{{ route('teacher.exams.edit', $exam['id']) }}" class="px-4 py-2 bg-yellow-600 text-white rounded-lg text-sm font-medium hover:bg-yellow-700 transition duration-200">
+                                @if($exam->status === 'draft')
+                                <a href="{{ route('teacher.exams.edit', $exam->id) }}" class="px-4 py-2 bg-yellow-600 text-white rounded-lg text-sm font-medium hover:bg-yellow-700 transition duration-200">
                                     <i class="fas fa-edit mr-1"></i>Edit
                                 </a>
                                 @endif
-                                <button class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition duration-200">
-                                    <i class="fas fa-trash mr-1"></i>Delete
-                                </button>
+                                <form action="{{ route('teacher.exams.destroy', $exam->id) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this exam?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition duration-200">
+                                        <i class="fas fa-trash mr-1"></i>Delete
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>
                 </div>
                 @endif
-            @endforeach
+            @empty
+                <!-- Empty State -->
+                <div class="col-span-2 bg-white rounded-xl shadow-md p-12 text-center">
+                    <div class="bg-gray-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-folder-open text-4xl text-gray-400"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">No Exams Found</h3>
+                    <p class="text-gray-600 mb-6">You haven't created any exams yet. Get started by creating your first exam.</p>
+                    <a href="{{ route('teacher.exams.create') }}" class="inline-flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition duration-200">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Create Your First Exam</span>
+                    </a>
+                </div>
+            @endforelse
         </div>
 
-        @if(count(array_filter($exams, fn($e) => $statusFilter === 'all' || $e['status'] === $statusFilter)) === 0)
-        <!-- Empty State -->
+        @if($exams->isNotEmpty() && $exams->where('status', $statusFilter)->count() === 0 && $statusFilter !== 'all')
+        <!-- No results for filter -->
         <div class="bg-white rounded-xl shadow-md p-12 text-center">
             <div class="bg-gray-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-folder-open text-4xl text-gray-400"></i>
+                <i class="fas fa-filter text-4xl text-gray-400"></i>
             </div>
-            <h3 class="text-xl font-bold text-gray-900 mb-2">No Exams Found</h3>
-            <p class="text-gray-600 mb-6">You haven't created any exams yet. Get started by creating your first exam.</p>
-            <a href="{{ route('teacher.exams.create') }}" class="inline-flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition duration-200">
-                <i class="fas fa-plus-circle"></i>
-                <span>Create Your First Exam</span>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">No {{ ucfirst($statusFilter) }} Exams</h3>
+            <p class="text-gray-600 mb-6">No exams match the selected filter.</p>
+            <a href="?status=all" class="inline-flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition duration-200">
+                <i class="fas fa-list"></i>
+                <span>View All Exams</span>
             </a>
         </div>
         @endif

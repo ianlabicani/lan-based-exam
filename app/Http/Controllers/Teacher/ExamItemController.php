@@ -3,8 +3,340 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
+use App\Models\Exam;
+use App\Models\ExamItem;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ExamItemController extends Controller
 {
-    //
+    /**
+     * Store a newly created exam item.
+     */
+    public function store(Request $request, $examId)
+    {
+        // Verify the exam belongs to the authenticated teacher
+        $exam = Exam::whereHas('teachers', function ($query) {
+            $query->where('teacher_id', Auth::id());
+        })->findOrFail($examId);
+
+        // Check if exam is not active or archived
+        if (in_array($exam->status, ['active', 'archived'])) {
+            return redirect()->back()
+                ->with('error', 'Cannot add items to an active or archived exam.');
+        }
+
+        $payload = $request->validate([
+            'type' => 'required|string|in:mcq,truefalse,fillblank,shortanswer,essay,matching',
+            'level' => 'required|string|in:easy,moderate,difficult',
+            'question' => 'required|string',
+            'points' => 'required|integer|min:1',
+            'expected_answer' => 'nullable|string',
+            'answer' => 'nullable|string',
+            'options' => 'nullable|array',
+            'options.*.text' => 'required_with:options|string',
+            'options.*.correct' => 'required_with:options|boolean',
+            'pairs' => 'nullable|array',
+            'pairs.*.left' => 'required_with:pairs|string',
+            'pairs.*.right' => 'required_with:pairs|string',
+        ]);
+
+        switch ($payload['type']) {
+            case 'mcq':
+                $payload = $this->prepareMcq($request, $payload);
+                if (isset($payload['_error'])) {
+                    return $payload['_error'];
+                }
+                break;
+            case 'truefalse':
+                $payload = $this->prepareTrueFalse($request, $payload);
+                if (isset($payload['_error'])) {
+                    return $payload['_error'];
+                }
+                break;
+            case 'essay':
+                $payload = $this->prepareEssay($payload);
+                if (isset($payload['_error'])) {
+                    return $payload['_error'];
+                }
+                break;
+            case 'fillblank':
+                $payload = $this->prepareFillBlank($payload);
+                if (isset($payload['_error'])) {
+                    return $payload['_error'];
+                }
+                break;
+            case 'shortanswer':
+                $payload = $this->prepareShortAnswer($payload);
+                if (isset($payload['_error'])) {
+                    return $payload['_error'];
+                }
+                break;
+            case 'matching':
+                $payload = $this->prepareMatching($request, $payload);
+                if (isset($payload['_error'])) {
+                    return $payload['_error'];
+                }
+                break;
+        }
+
+        $item = $exam->items()->create([
+            'type' => $payload['type'],
+            'level' => $payload['level'],
+            'question' => $payload['question'],
+            'points' => $payload['points'],
+            'expected_answer' => $payload['expected_answer'] ?? null,
+            'answer' => $payload['answer'] ?? null,
+            'options' => $payload['options'] ?? null,
+            'pairs' => $payload['pairs'] ?? null,
+        ]);
+
+        // Recalculate total points
+        $total = $exam->items()->sum('points');
+        if ($exam->total_points !== $total) {
+            $exam->update(['total_points' => $total]);
+        }
+
+        return redirect()->route('teacher.exams.show', ['id' => $exam->id, 'tab' => 'items'])
+            ->with('success', 'Question added successfully!');
+    }
+
+    /**
+     * Update the specified exam item.
+     */
+    public function update(Request $request, $examId, $itemId)
+    {
+        // Verify the exam belongs to the authenticated teacher
+        $exam = Exam::whereHas('teachers', function ($query) {
+            $query->where('teacher_id', Auth::id());
+        })->findOrFail($examId);
+
+        $examItem = ExamItem::where('exam_id', $examId)
+            ->findOrFail($itemId);
+
+        // Check if exam is not active or archived
+        if (in_array($exam->status, ['active', 'archived'])) {
+            return redirect()->back()
+                ->with('error', 'Cannot modify items of an active or archived exam.');
+        }
+
+        $payload = $request->validate([
+            'type' => 'sometimes|string|in:mcq,truefalse,fillblank,shortanswer,essay,matching',
+            'level' => 'sometimes|string|in:easy,moderate,difficult',
+            'question' => 'sometimes|string',
+            'points' => 'sometimes|integer|min:1',
+            'expected_answer' => 'nullable|string',
+            'answer' => 'nullable|string',
+            'options' => 'nullable|array',
+            'options.*.text' => 'required_with:options|string',
+            'options.*.correct' => 'required_with:options|boolean',
+            'pairs' => 'nullable|array',
+            'pairs.*.left' => 'required_with:pairs|string',
+            'pairs.*.right' => 'required_with:pairs|string',
+        ]);
+
+        // Merge current item data with incoming payload so helpers can operate on a full dataset
+        $data = array_merge($examItem->toArray(), $payload);
+
+        $type = $payload['type'] ?? $examItem->type;
+
+        switch ($type) {
+            case 'mcq':
+                $data = $this->prepareMcq($request, $data);
+                if (isset($data['_error'])) {
+                    return $data['_error'];
+                }
+                break;
+            case 'truefalse':
+                $data = $this->prepareTrueFalse($request, $data);
+                if (isset($data['_error'])) {
+                    return $data['_error'];
+                }
+                break;
+            case 'essay':
+                $data = $this->prepareEssay($data);
+                if (isset($data['_error'])) {
+                    return $data['_error'];
+                }
+                break;
+            case 'fillblank':
+                $data = $this->prepareFillBlank($data);
+                if (isset($data['_error'])) {
+                    return $data['_error'];
+                }
+                break;
+            case 'shortanswer':
+                $data = $this->prepareShortAnswer($data);
+                if (isset($data['_error'])) {
+                    return $data['_error'];
+                }
+                break;
+            case 'matching':
+                $data = $this->prepareMatching($request, $data);
+                if (isset($data['_error'])) {
+                    return $data['_error'];
+                }
+                break;
+        }
+
+        $updateData = [
+            'type' => $type,
+            'level' => $data['level'] ?? $examItem->level,
+            'question' => $data['question'] ?? $examItem->question,
+            'points' => $data['points'] ?? $examItem->points,
+            'expected_answer' => $data['expected_answer'] ?? null,
+            'answer' => $data['answer'] ?? null,
+            'options' => $data['options'] ?? null,
+            'pairs' => $data['pairs'] ?? null,
+        ];
+
+        // Update the exam item
+        $examItem->update($updateData);
+
+        // Recalculate total points
+        $total = $exam->items()->sum('points');
+        if ($exam->total_points !== $total) {
+            $exam->update(['total_points' => $total]);
+        }
+
+        return redirect()->route('teacher.exams.show', ['id' => $exam->id, 'tab' => 'items'])
+            ->with('success', 'Question updated successfully!');
+    }
+
+    /**
+     * Remove the specified exam item.
+     */
+    public function destroy($examId, $itemId)
+    {
+        // Verify the exam belongs to the authenticated teacher
+        $exam = Exam::whereHas('teachers', function ($query) {
+            $query->where('teacher_id', Auth::id());
+        })->findOrFail($examId);
+
+        $examItem = ExamItem::where('exam_id', $examId)
+            ->findOrFail($itemId);
+
+        // Check if exam is not active or archived
+        if (in_array($exam->status, ['active', 'archived'])) {
+            return redirect()->back()
+                ->with('error', 'Cannot delete items of an active or archived exam.');
+        }
+
+        $examItem->delete();
+
+        // Recalculate total points
+        $total = $exam->items()->sum('points');
+        if ($exam->total_points !== $total) {
+            $exam->update(['total_points' => $total]);
+        }
+
+        return redirect()->route('teacher.exams.show', ['id' => $exam->id, 'tab' => 'items'])
+            ->with('success', 'Question deleted successfully!');
+    }
+
+    // Preparation methods for each question type
+
+    private function prepareMcq(Request $request, array $data): array
+    {
+        $options = $request->input('options', []);
+
+        if (empty($options) || !is_array($options)) {
+            return ['_error' => redirect()->back()
+                ->withErrors(['options' => 'Options are required for multiple choice questions.'])
+                ->withInput()];
+        }
+
+        $hasCorrect = collect($options)->contains(fn($o) => isset($o['correct']) && $o['correct']);
+
+        if (!$hasCorrect) {
+            return ['_error' => redirect()->back()
+                ->withErrors(['options' => 'At least one option must be marked correct.'])
+                ->withInput()];
+        }
+
+        $data['options'] = $options;
+        unset($data['answer']);
+        return $data;
+    }
+
+    private function prepareTrueFalse(Request $request, array $data): array
+    {
+        $value = $request->input('answer', $data['answer'] ?? null);
+
+        if ($value === null) {
+            return ['_error' => redirect()->back()
+                ->withErrors(['answer' => 'Answer is required for true/false questions.'])
+                ->withInput()];
+        }
+
+        if ($value === true) {
+            $value = 'true';
+        } elseif ($value === false) {
+            $value = 'false';
+        } elseif (!is_string($value)) {
+            return ['_error' => redirect()->back()
+                ->withErrors(['answer' => 'Answer must be the string "true" or "false".'])
+                ->withInput()];
+        }
+
+        $normalized = strtolower(trim((string) $value));
+        if (!in_array($normalized, ['true', 'false'], true)) {
+            return ['_error' => redirect()->back()
+                ->withErrors(['answer' => 'Answer must be the string "true" or "false".'])
+                ->withInput()];
+        }
+
+        $data['answer'] = $normalized;
+        $data['options'] = null;
+        $data['pairs'] = null;
+
+        return $data;
+    }
+
+    private function prepareEssay(array $data): array
+    {
+        if (empty($data['expected_answer'])) {
+            return ['_error' => redirect()->back()
+                ->withErrors(['expected_answer' => 'Expected answer (reference) is required for essay questions.'])
+                ->withInput()];
+        }
+        unset($data['answer'], $data['options']);
+        return $data;
+    }
+
+    private function prepareFillBlank(array $data): array
+    {
+        if (empty($data['expected_answer'])) {
+            return ['_error' => redirect()->back()
+                ->withErrors(['expected_answer' => 'Expected answer is required for fill-in-the-blank questions.'])
+                ->withInput()];
+        }
+        unset($data['answer'], $data['options'], $data['pairs']);
+        return $data;
+    }
+
+    private function prepareShortAnswer(array $data): array
+    {
+        if (empty($data['expected_answer'])) {
+            return ['_error' => redirect()->back()
+                ->withErrors(['expected_answer' => 'Expected answer is required for short answer questions.'])
+                ->withInput()];
+        }
+        unset($data['answer'], $data['options'], $data['pairs']);
+        return $data;
+    }
+
+    private function prepareMatching(Request $request, array $data): array
+    {
+        $pairs = $request->input('pairs');
+        // Make pairs optional/nullable. If provided, ensure it's an array; otherwise set to null.
+        if ($pairs !== null && !is_array($pairs)) {
+            return ['_error' => redirect()->back()
+                ->withErrors(['pairs' => 'Pairs must be an array when provided.'])
+                ->withInput()];
+        }
+        $data['pairs'] = $pairs ?: null;
+        unset($data['answer'], $data['options'], $data['expected_answer']);
+        return $data;
+    }
 }

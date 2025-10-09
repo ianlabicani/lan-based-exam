@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Teacher\ExamController;
+use App\Http\Controllers\Teacher\ExamItemController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->prefix('teacher')->name('teacher.')->group(function () {
@@ -9,36 +11,20 @@ Route::middleware(['auth', 'verified'])->prefix('teacher')->name('teacher.')->gr
 
     // Exam Routes
     Route::prefix('exams')->name('exams.')->group(function () {
-        Route::get('/', function () {
-            return view('teacher.exams.index');
-        })->name('index');
+        Route::get('/', [ExamController::class, 'index'])->name('index');
+        Route::get('/create', [ExamController::class, 'create'])->name('create');
+        Route::post('/', [ExamController::class, 'store'])->name('store');
+        Route::get('/{id}', [ExamController::class, 'show'])->name('show');
+        Route::get('/{id}/edit', [ExamController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [ExamController::class, 'update'])->name('update');
+        Route::patch('/{id}/status', [ExamController::class, 'updateStatus'])->name('updateStatus');
+        Route::delete('/{id}', [ExamController::class, 'destroy'])->name('destroy');
+        Route::get('/{id}/takers', [ExamController::class, 'getExamTakers'])->name('takers');
 
-        Route::get('/create', function () {
-            return view('teacher.exams.create');
-        })->name('create');
-
-        Route::post('/', function () {
-            // Store exam logic
-            return redirect()->route('teacher.exams.index');
-        })->name('store');
-
-        Route::get('/{id}', function ($id) {
-            return view('teacher.exams.show', ['id' => $id]);
-        })->name('show');
-
-        Route::get('/{id}/edit', function ($id) {
-            return view('teacher.exams.edit', ['id' => $id]);
-        })->name('edit');
-
-        Route::put('/{id}', function ($id) {
-            // Update exam logic
-            return redirect()->route('teacher.exams.show', $id);
-        })->name('update');
-
-        Route::delete('/{id}', function ($id) {
-            // Delete exam logic
-            return redirect()->route('teacher.exams.index');
-        })->name('destroy');
+        // Exam Items Routes
+        Route::post('/{examId}/items', [ExamItemController::class, 'store'])->name('items.store');
+        Route::put('/{examId}/items/{itemId}', [ExamItemController::class, 'update'])->name('items.update');
+        Route::delete('/{examId}/items/{itemId}', [ExamItemController::class, 'destroy'])->name('items.destroy');
     });
 
     // Analytics Route

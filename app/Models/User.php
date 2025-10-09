@@ -46,7 +46,7 @@ class User extends Authenticatable
         ];
     }
 
-     public function roles()
+    public function roles()
     {
         return $this->belongsToMany(Role::class)->withTimestamps();
     }
@@ -59,5 +59,10 @@ class User extends Authenticatable
     public function hasAnyRole($roles)
     {
         return $this->roles()->whereIn('name', $roles)->exists();
+    }
+
+    public function exams()
+    {
+        return $this->belongsToMany(Exam::class, 'exam_teacher', 'teacher_id', 'exam_id')->withTimestamps();
     }
 }

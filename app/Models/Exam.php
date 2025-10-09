@@ -27,7 +27,7 @@ class Exam extends Model
 
     public function teachers()
     {
-        return $this->belongsToMany(User::class, 'exam_teacher', 'exam_id', 'teacher_id');
+        return $this->belongsToMany(User::class, 'exam_teacher', 'exam_id', 'teacher_id')->withTimestamps();
     }
 
     public function items()

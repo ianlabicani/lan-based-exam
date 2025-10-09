@@ -70,25 +70,48 @@
                         @enderror
                     </div>
 
-                    <!-- Instructions -->
+                    <!-- Year -->
                     <div>
-                        <label for="instructions" class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="fas fa-list-ol mr-2 text-gray-500"></i>Instructions for Students
+                        <label for="year" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-calendar mr-2 text-gray-500"></i>Academic Year *
                         </label>
-                        <textarea
-                            id="instructions"
-                            name="instructions"
-                            rows="6"
+                        <input
+                            type="text"
+                            id="year"
+                            name="year"
+                            required
+                            value="{{ old('year', now()->year) }}"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
-                            placeholder="Enter detailed instructions for students taking this exam..."
-                        >{{ old('instructions') }}</textarea>
-                        @error('instructions')
+                            placeholder="e.g., 2025"
+                        />
+                        @error('year')
+                            <p class="mt-2 text-sm text-red-600 flex items-center">
+                                <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
+                            </p>
+                        @enderror
+                    </div>
+
+                    <!-- Sections -->
+                    <div>
+                        <label for="sections" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-users-class mr-2 text-gray-500"></i>Sections *
+                        </label>
+                        <input
+                            type="text"
+                            id="sections"
+                            name="sections"
+                            required
+                            value="{{ old('sections') }}"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
+                            placeholder="e.g., A, B, C or just A"
+                        />
+                        @error('sections')
                             <p class="mt-2 text-sm text-red-600 flex items-center">
                                 <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
                             </p>
                         @enderror
                         <p class="mt-2 text-xs text-gray-500">
-                            <i class="fas fa-info-circle mr-1"></i>Provide clear instructions about exam rules, time limits, and any special requirements.
+                            <i class="fas fa-info-circle mr-1"></i>Enter sections separated by commas (e.g., "A, B, C")
                         </p>
                     </div>
                 </div>
@@ -97,24 +120,24 @@
             <!-- Schedule Card -->
             <div class="bg-white rounded-xl shadow-md p-6">
                 <h2 class="text-xl font-bold text-gray-900 mb-6 border-b border-gray-200 pb-4">
-                    <i class="fas fa-calendar-alt text-indigo-600 mr-2"></i>Schedule & Duration
+                    <i class="fas fa-calendar-alt text-indigo-600 mr-2"></i>Schedule
                 </h2>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Start Time -->
                     <div>
-                        <label for="start_time" class="block text-sm font-medium text-gray-700 mb-2">
+                        <label for="starts_at" class="block text-sm font-medium text-gray-700 mb-2">
                             <i class="fas fa-play-circle mr-2 text-gray-500"></i>Start Date & Time *
                         </label>
                         <input
                             type="datetime-local"
-                            id="start_time"
-                            name="start_time"
+                            id="starts_at"
+                            name="starts_at"
                             required
-                            value="{{ old('start_time') }}"
+                            value="{{ old('starts_at') }}"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
                         />
-                        @error('start_time')
+                        @error('starts_at')
                             <p class="mt-2 text-sm text-red-600 flex items-center">
                                 <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
                             </p>
@@ -123,64 +146,18 @@
 
                     <!-- End Time -->
                     <div>
-                        <label for="end_time" class="block text-sm font-medium text-gray-700 mb-2">
+                        <label for="ends_at" class="block text-sm font-medium text-gray-700 mb-2">
                             <i class="fas fa-stop-circle mr-2 text-gray-500"></i>End Date & Time *
                         </label>
                         <input
                             type="datetime-local"
-                            id="end_time"
-                            name="end_time"
+                            id="ends_at"
+                            name="ends_at"
                             required
-                            value="{{ old('end_time') }}"
+                            value="{{ old('ends_at') }}"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
                         />
-                        @error('end_time')
-                            <p class="mt-2 text-sm text-red-600 flex items-center">
-                                <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
-                            </p>
-                        @enderror
-                    </div>
-
-                    <!-- Duration -->
-                    <div>
-                        <label for="duration" class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="fas fa-clock mr-2 text-gray-500"></i>Duration (minutes) *
-                        </label>
-                        <input
-                            type="number"
-                            id="duration"
-                            name="duration"
-                            required
-                            min="1"
-                            value="{{ old('duration', 60) }}"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
-                            placeholder="60"
-                        />
-                        @error('duration')
-                            <p class="mt-2 text-sm text-red-600 flex items-center">
-                                <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
-                            </p>
-                        @enderror
-                        <p class="mt-2 text-xs text-gray-500">
-                            <i class="fas fa-info-circle mr-1"></i>Time allowed for students to complete the exam
-                        </p>
-                    </div>
-
-                    <!-- Total Points -->
-                    <div>
-                        <label for="total_points" class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="fas fa-star mr-2 text-gray-500"></i>Total Points
-                        </label>
-                        <input
-                            type="number"
-                            id="total_points"
-                            name="total_points"
-                            min="0"
-                            value="{{ old('total_points', 100) }}"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
-                            placeholder="100"
-                        />
-                        @error('total_points')
+                        @error('ends_at')
                             <p class="mt-2 text-sm text-red-600 flex items-center">
                                 <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
                             </p>
@@ -189,72 +166,76 @@
                 </div>
             </div>
 
-            <!-- Settings Card -->
+            <!-- Table of Specifications (TOS) Card -->
             <div class="bg-white rounded-xl shadow-md p-6">
                 <h2 class="text-xl font-bold text-gray-900 mb-6 border-b border-gray-200 pb-4">
-                    <i class="fas fa-cog text-indigo-600 mr-2"></i>Exam Settings
+                    <i class="fas fa-table text-indigo-600 mr-2"></i>Table of Specifications (TOS)
+                </h2>
+
+                <div id="tosContainer" class="space-y-4">
+                    <!-- TOS Item Template -->
+                    <div class="tos-item border border-gray-200 rounded-lg p-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Topic/Objective</label>
+                                <input
+                                    type="text"
+                                    name="tos[0][topic]"
+                                    required
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="e.g., Arrays and Linked Lists"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Number of Items</label>
+                                <input
+                                    type="number"
+                                    name="tos[0][items]"
+                                    min="1"
+                                    required
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="5"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Points per Item</label>
+                                <input
+                                    type="number"
+                                    name="tos[0][points]"
+                                    min="1"
+                                    required
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="2"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    onclick="addTosItem()"
+                    class="mt-4 px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg font-medium hover:bg-indigo-200 transition duration-200"
+                >
+                    <i class="fas fa-plus-circle mr-2"></i>Add Another Topic
+                </button>
+
+                @error('tos')
+                    <p class="mt-2 text-sm text-red-600 flex items-center">
+                        <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
+                    </p>
+                @enderror
+            </div>
+
+            <!-- Settings Card -->
+            <div class="bg-white rounded-xl shadow-md p-6" style="display: none;">
+                <h2 class="text-xl font-bold text-gray-900 mb-6 border-b border-gray-200 pb-4">
+                    <i class="fas fa-cog text-indigo-600 mr-2"></i>Exam Settings (Optional)
                 </h2>
 
                 <div class="space-y-4">
-                    <!-- Shuffle Questions -->
-                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div class="flex items-start space-x-3">
-                            <input
-                                type="checkbox"
-                                id="shuffle_questions"
-                                name="shuffle_questions"
-                                value="1"
-                                {{ old('shuffle_questions') ? 'checked' : '' }}
-                                class="mt-1 w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                            />
-                            <div>
-                                <label for="shuffle_questions" class="font-medium text-gray-900 cursor-pointer">
-                                    Shuffle Questions
-                                </label>
-                                <p class="text-sm text-gray-600">Randomize the order of questions for each student</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Show Results Immediately -->
-                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div class="flex items-start space-x-3">
-                            <input
-                                type="checkbox"
-                                id="show_results"
-                                name="show_results"
-                                value="1"
-                                {{ old('show_results') ? 'checked' : '' }}
-                                class="mt-1 w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                            />
-                            <div>
-                                <label for="show_results" class="font-medium text-gray-900 cursor-pointer">
-                                    Show Results Immediately
-                                </label>
-                                <p class="text-sm text-gray-600">Display scores to students right after submission</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Enable Activity Monitoring -->
-                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div class="flex items-start space-x-3">
-                            <input
-                                type="checkbox"
-                                id="monitor_activity"
-                                name="monitor_activity"
-                                value="1"
-                                checked
-                                class="mt-1 w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                            />
-                            <div>
-                                <label for="monitor_activity" class="font-medium text-gray-900 cursor-pointer">
-                                    Enable Activity Monitoring
-                                </label>
-                                <p class="text-sm text-gray-600">Track tab switches and window focus changes during exam</p>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Total Points (Auto-calculated from TOS) -->
+                    <input type="hidden" name="total_points" value="0">
                 </div>
             </div>
 
@@ -281,7 +262,7 @@
                             class="px-6 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition duration-200 flex items-center space-x-2"
                         >
                             <i class="fas fa-check-circle"></i>
-                            <span>Create & Publish</span>
+                            <span>Create & Add Questions</span>
                         </button>
                     </div>
                 </div>
@@ -289,5 +270,62 @@
         </form>
     </div>
 </div>
+
+<script>
+    let tosIndex = 1;
+
+    function addTosItem() {
+        const container = document.getElementById('tosContainer');
+        const newItem = document.createElement('div');
+        newItem.className = 'tos-item border border-gray-200 rounded-lg p-4';
+        newItem.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Topic/Objective</label>
+                    <input
+                        type="text"
+                        name="tos[${tosIndex}][topic]"
+                        required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                        placeholder="e.g., Stacks and Queues"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Number of Items</label>
+                    <input
+                        type="number"
+                        name="tos[${tosIndex}][items]"
+                        min="1"
+                        required
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                        placeholder="5"
+                    />
+                </div>
+                <div class="flex items-end space-x-2">
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Points per Item</label>
+                        <input
+                            type="number"
+                            name="tos[${tosIndex}][points]"
+                            min="1"
+                            required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                            placeholder="2"
+                        />
+                    </div>
+                    <button
+                        type="button"
+                        onclick="this.closest('.tos-item').remove()"
+                        class="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition duration-200"
+                    >
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        container.appendChild(newItem);
+        tosIndex++;
+    }
+</script>
 
 @endsection
