@@ -40,6 +40,77 @@
         </dl>
     </div>
 
+    <!-- Table of Specifications -->
+    @if(!empty($exam['tos']))
+    @php
+        $tosData = is_string($exam['tos']) ? json_decode($exam['tos'], true) : $exam['tos'];
+    @endphp
+    @if($tosData && is_array($tosData))
+    <div class="bg-gray-50 rounded-lg p-6">
+        <h3 class="text-lg font-bold text-gray-900 mb-4">
+            <i class="fas fa-table text-indigo-600 mr-2"></i>Table of Specifications
+        </h3>
+        <div class="space-y-4">
+            @foreach($tosData as $index => $topic)
+            <div class="bg-white rounded-lg p-4 border border-gray-200">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="flex-1">
+                        <h4 class="text-md font-bold text-gray-900 mb-2">
+                            <i class="fas fa-book-open text-indigo-500 mr-2"></i>{{ $topic['topic'] ?? 'Topic ' . ($index + 1) }}
+                        </h4>
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                                <span class="text-gray-500">Time Allotment:</span>
+                                <span class="font-semibold text-gray-900">{{ $topic['time_allotment'] ?? 0 }} minutes</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Number of Items:</span>
+                                <span class="font-semibold text-gray-900">{{ $topic['no_of_items'] ?? 0 }} questions</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @if(isset($topic['distribution']))
+                <div class="mt-3 pt-3 border-t border-gray-200">
+                    <p class="text-xs font-medium text-gray-500 uppercase mb-2">Difficulty Distribution</p>
+                    <div class="flex items-center space-x-3">
+                        @if(isset($topic['distribution']['easy']))
+                        <span class="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">
+                            <i class="fas fa-signal mr-1"></i>Easy: {{ $topic['distribution']['easy']['allocation'] ?? 0 }}
+                        </span>
+                        @endif
+                        @if(isset($topic['distribution']['moderate']))
+                        <span class="px-3 py-1 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full">
+                            <i class="fas fa-signal mr-1"></i>Moderate: {{ $topic['distribution']['moderate']['allocation'] ?? 0 }}
+                        </span>
+                        @endif
+                        @if(isset($topic['distribution']['difficult']))
+                        <span class="px-3 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
+                            <i class="fas fa-signal mr-1"></i>Difficult: {{ $topic['distribution']['difficult']['allocation'] ?? 0 }}
+                        </span>
+                        @endif
+                    </div>
+                </div>
+                @endif
+
+                @if(!empty($topic['outcomes']))
+                <div class="mt-3 pt-3 border-t border-gray-200">
+                    <p class="text-xs font-medium text-gray-500 uppercase mb-2">Learning Outcomes</p>
+                    <ul class="list-disc list-inside space-y-1">
+                        @foreach($topic['outcomes'] as $outcome)
+                        <li class="text-sm text-gray-700">{{ $outcome }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+                @endif
+            </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+    @endif
+
     <!-- Instructions -->
     <div class="bg-gray-50 rounded-lg p-6">
         <h3 class="text-lg font-bold text-gray-900 mb-4">
