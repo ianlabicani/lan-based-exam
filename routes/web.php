@@ -8,6 +8,16 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
+    $user = auth()->user();
+
+    // Redirect based on user role
+    if ($user->hasRole('teacher')) {
+        return redirect()->route('teacher.dashboard');
+    } elseif ($user->hasRole('secretary')) {
+        return redirect()->route('secretary.dashboard');
+    }
+
+    // Default fallback if no specific role
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -18,3 +28,4 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
+require __DIR__.'/teacher.php';

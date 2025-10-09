@@ -1,0 +1,179 @@
+{
+    "system": {
+        "name": "Computer-Based Examination and Monitoring System (CBEMS)",
+        "description": "A web-based examination management platform for conducting, scheduling, and monitoring student examinations in real time with tab/window activity tracking.",
+        "user_roles": ["Teacher", "Student", "Administrator"],
+        "core_features": {
+            "authentication": {
+                "login": "Handles user authentication via Laravel Sanctum or JWT.",
+                "logout": "Provides confirmation modal and session invalidation."
+            },
+            "monitoring": {
+                "activity_tracking": "Monitors tab changes, visibility, focus, and idle time of students during exams.",
+                "log_storage": "Sends events to backend for detection of possible misconduct."
+            },
+            "exam_management": {
+                "create_exam": "Teachers can create exams with title, description, schedule, duration, and instructions.",
+                "question_bank": "Supports multiple question types such as MCQ, True/False, Short Answer, Matching, and Essay.",
+                "exam_scheduling": "Teachers set start and end times; exams automatically publish when schedule matches current time.",
+                "exam_taking": "Students can take published exams within the schedule using a timed interface.",
+                "result_review": "Teachers can view and grade taken exams."
+            },
+            "dashboard": {
+                "teacher_dashboard": "Summarizes exams, active takers, and performance.",
+                "student_dashboard": "Displays available exams, completed exams, and overall performance summary."
+            }
+        },
+        "frontend_structure": {
+            "auth": {
+                "login": {
+                    "description": "Login form that authenticates users and redirects them based on role.",
+                    "ui": [
+                        "email input",
+                        "password input",
+                        "submit button",
+                        "error message"
+                    ]
+                },
+                "logout-button": {
+                    "description": "Triggers logout confirmation modal.",
+                    "logout-confirm-modal": {
+                        "description": "Confirms user logout action."
+                    }
+                }
+            },
+            "core": {
+                "guards": {
+                    "description": "Protects routes for teacher/student access levels."
+                },
+                "interceptors": {
+                    "description": "Attaches auth tokens and handles global HTTP errors."
+                },
+                "models": {
+                    "description": "Contains TypeScript interfaces for API entities such as Exam, Question, Schedule, ActivityLog."
+                },
+                "services": {
+                    "description": "Handles API communication and authentication logic."
+                }
+            },
+            "student": {
+                "dashboard": {
+                    "description": "Displays upcoming and completed exams.",
+                    "dashboard-header": {
+                        "description": "Shows welcome message, student info, and summary."
+                    }
+                },
+                "exams": {
+                    "exam-card": {
+                        "description": "UI component to show basic exam info and status."
+                    },
+                    "list-exams": {
+                        "description": "Lists available exams fetched from backend."
+                    },
+                    "taken-exams": {
+                        "create-taken-exam": {
+                            "description": "Main interface for taking an exam.",
+                            "activity-monitor": "Tracks tab/window visibility and reports to backend.",
+                            "exam-header": "Displays exam title, student name, and timer.",
+                            "exam-progress": "Shows number of questions answered.",
+                            "exam-question": "Renders questions dynamically by type.",
+                            "exam-timer": "Handles countdown and auto-submit when time expires."
+                        },
+                        "list-taken-exams": {
+                            "description": "Displays previously completed exams and scores."
+                        },
+                        "view-taken-exam": {
+                            "description": "Allows review of answers and scores after submission."
+                        }
+                    },
+                    "guards": {
+                        "description": "Prevents accessing exams not assigned to the logged-in student."
+                    },
+                    "models": {
+                        "description": "Contains student-related interfaces such as TakenExam and ActivityEvent."
+                    },
+                    "navbar": {
+                        "description": "Provides navigation links for student modules."
+                    },
+                    "services": {
+                        "description": "Handles API calls for fetching exams, submitting answers, and activity logs."
+                    }
+                }
+            },
+            "teacher": {
+                "dashboard": {
+                    "description": "Displays exam analytics, active takers, and recent submissions."
+                },
+                "exams": {
+                    "create-exam": {
+                        "description": "Form to create or edit an exam with schedule and instructions."
+                    },
+                    "list-exams": {
+                        "description": "Displays teacher’s created exams with status indicators (draft, published, archived)."
+                    },
+                    "view-exam": {
+                        "description": "Shows exam details, item list, and taker submissions.",
+                        "list-exam-items": {
+                            "description": "Displays all questions of an exam.",
+                            "create-item": {
+                                "description": "Modal-based forms for each question type.",
+                                "form_modals": [
+                                    "essay-form-modal",
+                                    "fill-blank-form-modal",
+                                    "matching-form-modal",
+                                    "mcq-form-modal",
+                                    "short-answer-form-modal",
+                                    "true-or-false-form-modal"
+                                ]
+                            },
+                            "delete-item": {
+                                "description": "Allows removal of existing questions."
+                            },
+                            "update-item": {
+                                "description": "Enables editing of question details."
+                            },
+                            "ui": {
+                                "description": "Components for displaying each question type visually in list.",
+                                "types": [
+                                    "essay-item",
+                                    "fill-blank-item",
+                                    "matching-item",
+                                    "mcq-item",
+                                    "short-answer-item",
+                                    "true-false-item"
+                                ]
+                            }
+                        },
+                        "taken-exams": {
+                            "list-taken-exams": {
+                                "description": "Shows list of students who took the exam."
+                            },
+                            "view-taken-exam": {
+                                "description": "Displays a specific student’s answers and grading options."
+                            }
+                        }
+                    }
+                },
+                "guards": {
+                    "description": "Restricts teacher routes to authorized users only."
+                },
+                "navbar": {
+                    "description": "Contains navigation links to teacher modules."
+                },
+                "services": {
+                    "description": "Handles API communication for creating exams, managing items, and grading takers."
+                }
+            },
+            "environments": {
+                "description": "Holds environment variables such as API URLs and keys."
+            }
+        },
+        "processes": {
+            "exam_publication": "A scheduled command or cron job checks exam schedules and updates status from 'draft' to 'published' when start_time <= current_time.",
+            "activity_logging": "Frontend activity-monitor sends logs to backend API /activities when user changes tab, becomes idle, or leaves window.",
+            "exam_taking": "Student selects an available exam -> system creates a taken_exam record -> exam questions are rendered -> progress tracked -> answers auto-submitted on timer end or manually.",
+            "grading": "Teacher reviews submissions and assigns scores (auto for MCQ, manual for essay/short).",
+            "result_display": "After grading, student can view scores in view-taken-exam page."
+        }
+    }
+}
