@@ -9,25 +9,30 @@ Route::middleware(['auth', 'verified'])->prefix('student')->name('student.')->gr
         return redirect()->route('student.exams.index');
     })->name('dashboard');
 
-    // Exam Routes for Students
+    // Exam Routes for Students - Available exams to browse
     Route::prefix('exams')->name('exams.')->group(function () {
         // List available exams
         Route::get('/', [ExamController::class, 'index'])->name('index');
-
-        // Take exam
-        Route::get('/{id}/take', [ExamController::class, 'take'])->name('take');
-        Route::post('/{id}/start', [ExamController::class, 'start'])->name('start');
-
-        // Save answer (AJAX)
-        Route::post('/{id}/save-answer', [ExamController::class, 'saveAnswer'])->name('saveAnswer');
-
-        // Submit exam
-        Route::post('/{id}/submit', [ExamController::class, 'submit'])->name('submit');
-
-        // View results
-        Route::get('/{id}/results', [ExamController::class, 'results'])->name('results');
     });
 
-    // My Exam History
-    Route::get('/my-exams', [TakenExamController::class, 'myExams'])->name('myExams');
+    // Taken Exams - New Pattern for exam taking and history
+    Route::prefix('taken-exams')->name('taken-exams.')->group(function () {
+        // View all taken exams (history)
+        Route::get('/', [TakenExamController::class, 'index'])->name('index');
+
+        // Start new exam
+        Route::get('/create', [TakenExamController::class, 'create'])->name('create');
+
+        // Continue ongoing exam
+        Route::get('/{id}/continue', [TakenExamController::class, 'continue'])->name('continue');
+
+        // View completed exam (review)
+        Route::get('/{id}', [TakenExamController::class, 'show'])->name('show');
+
+        // API endpoints
+        Route::post('/{id}/start', [TakenExamController::class, 'start'])->name('start');
+        Route::post('/{id}/save-answer', [TakenExamController::class, 'saveAnswer'])->name('save-answer');
+        Route::post('/{id}/submit', [TakenExamController::class, 'submit'])->name('submit');
+        Route::post('/{id}/activity', [TakenExamController::class, 'logActivity'])->name('activity');
+    });
 });

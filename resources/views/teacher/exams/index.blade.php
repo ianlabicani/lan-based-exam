@@ -87,6 +87,35 @@
                             </div>
                         </div>
 
+                        <!-- Year and Sections -->
+                        <div class="flex flex-wrap items-center gap-2 mt-3">
+                            @if(is_array($exam->year) && count($exam->year) > 0)
+                                <div class="flex items-center gap-1">
+                                    <span class="text-xs text-gray-500">
+                                        <i class="fas fa-graduation-cap"></i>
+                                    </span>
+                                    @foreach($exam->year as $year)
+                                        <span class="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs font-medium rounded">
+                                            Yr{{ $year }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            @if(is_array($exam->sections) && count($exam->sections) > 0)
+                                <div class="flex items-center gap-1">
+                                    <span class="text-xs text-gray-500">
+                                        <i class="fas fa-users-class"></i>
+                                    </span>
+                                    @foreach($exam->sections as $section)
+                                        <span class="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded uppercase">
+                                            {{ $section }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+
                         <!-- Exam Details -->
                         <div class="grid grid-cols-2 gap-4 mt-4">
                             <div class="flex items-center text-sm text-gray-600">

@@ -13,8 +13,8 @@ Route::get('/dashboard', function () {
     // Redirect based on user role
     if ($user->hasRole('teacher')) {
         return redirect()->route('teacher.dashboard');
-    } elseif ($user->hasRole('secretary')) {
-        return redirect()->route('secretary.dashboard');
+    } elseif ($user->hasRole('student')) {
+        return redirect()->route('student.dashboard');
     }
 
     // Default fallback if no specific role

@@ -7,10 +7,46 @@
         <dl class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
                 <dt class="text-sm font-medium text-gray-500 mb-1">
+                    <i class="fas fa-graduation-cap mr-1"></i>Year Level(s)
+                </dt>
+                <dd class="text-lg font-semibold text-gray-900">
+                    @if(is_array($exam->year) && count($exam->year) > 0)
+                        <div class="flex flex-wrap gap-2">
+                            @foreach($exam->year as $year)
+                                <span class="px-3 py-1 bg-indigo-100 text-indigo-700 text-sm font-semibold rounded-full">
+                                    Year {{ $year }}
+                                </span>
+                            @endforeach
+                        </div>
+                    @else
+                        <span class="text-gray-400">Not specified</span>
+                    @endif
+                </dd>
+            </div>
+            <div>
+                <dt class="text-sm font-medium text-gray-500 mb-1">
+                    <i class="fas fa-users-class mr-1"></i>Section(s)
+                </dt>
+                <dd class="text-lg font-semibold text-gray-900">
+                    @if(is_array($exam->sections) && count($exam->sections) > 0)
+                        <div class="flex flex-wrap gap-2">
+                            @foreach($exam->sections as $section)
+                                <span class="px-3 py-1 bg-green-100 text-green-700 text-sm font-semibold rounded-full uppercase">
+                                    {{ $section }}
+                                </span>
+                            @endforeach
+                        </div>
+                    @else
+                        <span class="text-gray-400">Not specified</span>
+                    @endif
+                </dd>
+            </div>
+            <div>
+                <dt class="text-sm font-medium text-gray-500 mb-1">
                     <i class="fas fa-calendar mr-1"></i>Start Date & Time
                 </dt>
                 <dd class="text-lg font-semibold text-gray-900">
-                    {{ date('l, F j, Y - g:i A', strtotime($exam['start_time'])) }}
+                    {{ $exam->starts_at ? $exam->starts_at->format('l, F j, Y - g:i A') : 'Not set' }}
                 </dd>
             </div>
             <div>
@@ -18,7 +54,7 @@
                     <i class="fas fa-calendar-times mr-1"></i>End Date & Time
                 </dt>
                 <dd class="text-lg font-semibold text-gray-900">
-                    {{ date('l, F j, Y - g:i A', strtotime($exam['end_time'])) }}
+                    {{ $exam->ends_at ? $exam->ends_at->format('l, F j, Y - g:i A') : 'Not set' }}
                 </dd>
             </div>
             <div>
@@ -26,7 +62,11 @@
                     <i class="fas fa-clock mr-1"></i>Duration
                 </dt>
                 <dd class="text-lg font-semibold text-gray-900">
-                    {{ $exam['duration'] }} minutes
+                    @if($exam->starts_at && $exam->ends_at)
+                        {{ $exam->starts_at->diffInMinutes($exam->ends_at) }} minutes
+                    @else
+                        Not calculated
+                    @endif
                 </dd>
             </div>
             <div>
@@ -34,7 +74,7 @@
                     <i class="fas fa-star mr-1"></i>Total Points
                 </dt>
                 <dd class="text-lg font-semibold text-gray-900">
-                    {{ $exam['total_points'] }} points
+                    {{ $exam->total_points }} points
                 </dd>
             </div>
         </dl>

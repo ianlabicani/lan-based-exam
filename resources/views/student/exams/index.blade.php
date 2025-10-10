@@ -61,6 +61,35 @@
                             <div class="flex-1">
                                 <h3 class="text-xl font-bold mb-2">{{ $exam->title }}</h3>
                                 <p class="text-indigo-100 text-sm">{{ $exam->description }}</p>
+
+                                <!-- Year and Sections -->
+                                <div class="flex flex-wrap items-center gap-2 mt-3">
+                                    @if(is_array($exam->year) && count($exam->year) > 0)
+                                        <div class="flex items-center gap-1">
+                                            <span class="text-xs text-indigo-200">
+                                                <i class="fas fa-graduation-cap"></i>
+                                            </span>
+                                            @foreach($exam->year as $year)
+                                                <span class="px-2 py-0.5 bg-white bg-opacity-20 text-white text-xs font-medium rounded">
+                                                    Yr{{ $year }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    @endif
+
+                                    @if(is_array($exam->sections) && count($exam->sections) > 0)
+                                        <div class="flex items-center gap-1">
+                                            <span class="text-xs text-indigo-200">
+                                                <i class="fas fa-users-class"></i>
+                                            </span>
+                                            @foreach($exam->sections as $section)
+                                                <span class="px-2 py-0.5 bg-white bg-opacity-20 text-white text-xs font-medium rounded uppercase">
+                                                    {{ $section }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
                             </div>
                             @if($exam->taken)
                                 <span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full flex-shrink-0 ml-2">
@@ -137,13 +166,18 @@
 
                         <!-- Action Buttons -->
                         <div class="flex space-x-3">
-                            @if($exam->taken)
-                                <a href="{{ route('student.exams.results', $exam->id) }}"
+                            @if($exam->taken && $exam->taken_exam && $exam->taken_exam->submitted_at)
+                                <a href="{{ route('student.taken-exams.show', $exam->taken_exam->id) }}"
                                    class="flex-1 px-4 py-3 bg-indigo-600 text-white text-center rounded-lg font-medium hover:bg-indigo-700 transition duration-200">
                                     <i class="fas fa-chart-bar mr-2"></i>View Results
                                 </a>
+                            @elseif($exam->taken && $exam->taken_exam && !$exam->taken_exam->submitted_at)
+                                <a href="{{ route('student.taken-exams.continue', $exam->taken_exam->id) }}"
+                                   class="flex-1 px-4 py-3 bg-yellow-600 text-white text-center rounded-lg font-medium hover:bg-yellow-700 transition duration-200">
+                                    <i class="fas fa-play-circle mr-2"></i>Continue Exam
+                                </a>
                             @elseif($exam->is_available)
-                                <a href="{{ route('student.exams.take', $exam->id) }}"
+                                <a href="{{ route('student.taken-exams.create', ['exam_id' => $exam->id]) }}"
                                    class="flex-1 px-4 py-3 bg-green-600 text-white text-center rounded-lg font-medium hover:bg-green-700 transition duration-200">
                                     <i class="fas fa-play-circle mr-2"></i>Start Exam
                                 </a>

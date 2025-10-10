@@ -21,7 +21,7 @@
                     <a href="{{ route('student.exams.index') }}" class="px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium transition duration-200 {{ request()->routeIs('student.exams.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                         <i class="fas fa-file-alt mr-2"></i>Available Exams
                     </a>
-                    <a href="{{ route('student.myExams') }}" class="px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium transition duration-200 {{ request()->routeIs('student.myExams') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                    <a href="{{ route('student.taken-exams.index') }}" class="px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium transition duration-200 {{ request()->routeIs('student.taken-exams.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                         <i class="fas fa-history mr-2"></i>My Exam History
                     </a>
                 </div>
@@ -73,7 +73,7 @@
             <a href="{{ route('student.exams.index') }}" class="block px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium {{ request()->routeIs('student.exams.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                 <i class="fas fa-file-alt mr-2"></i>Available Exams
             </a>
-            <a href="{{ route('student.myExams') }}" class="block px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium {{ request()->routeIs('student.myExams') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+            <a href="{{ route('student.taken-exams.index') }}" class="block px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium {{ request()->routeIs('student.taken-exams.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                 <i class="fas fa-history mr-2"></i>My Exam History
             </a>
         </div>

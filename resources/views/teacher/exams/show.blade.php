@@ -49,6 +49,35 @@
                         @endif
                     </div>
                     <p class="text-gray-600 mt-2">{{ $exam->description }}</p>
+
+                    <!-- Year and Sections Summary -->
+                    <div class="flex flex-wrap items-center gap-3 mt-3">
+                        @if(is_array($exam->year) && count($exam->year) > 0)
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-medium text-gray-500 uppercase">
+                                    <i class="fas fa-graduation-cap mr-1"></i>Year:
+                                </span>
+                                @foreach($exam->year as $year)
+                                    <span class="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs font-semibold rounded">
+                                        {{ $year }}
+                                    </span>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        @if(is_array($exam->sections) && count($exam->sections) > 0)
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-medium text-gray-500 uppercase">
+                                    <i class="fas fa-users-class mr-1"></i>Section:
+                                </span>
+                                @foreach($exam->sections as $section)
+                                    <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded uppercase">
+                                        {{ $section }}
+                                    </span>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
                 </div>
                 <div class="flex space-x-2">
                     <button onclick="showStatusModal()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition duration-200">
