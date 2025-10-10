@@ -21,6 +21,7 @@ class Exam extends Model
     protected $casts = [
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
+        'year' => 'array',
         'sections' => 'array',
         'tos' => 'array',
     ];

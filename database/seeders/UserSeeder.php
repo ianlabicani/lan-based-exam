@@ -14,23 +14,36 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        $student = User::create([
-            'name' => 'Student',
-            'email' => 'student@mail.com',
-            'password' => Hash::make('password'),
-        ]);
+        $studentRole = Role::where('name', 'student')->first();
+        $students = [];
+
+        // Create students for each year and section
+        foreach (range(1, 4) as $year) {
+            foreach (range('a', 'g') as $section) {
+                $student = User::create([
+                    'name' => "Student {$year}".strtoupper($section),
+                    'email' => "student{$year}{$section}@mail.com",
+                    'password' => Hash::make('password'),
+                    'year' => (string) $year,
+                    'section' => $section,
+                ]);
+                $student->roles()->attach($studentRole);
+                $students[] = $student;
+            }
+        }
 
         $teacher = User::create([
             'name' => 'Teacher',
             'email' => 'teacher@mail.com',
             'password' => Hash::make('password'),
         ]);
+
         $admin = User::create([
             'name' => 'Admin',
             'email' => 'admin@mail.com',
             'password' => Hash::make('password'),
         ]);
-        $student->roles()->attach(Role::where('name', 'student')->first());
+
         $teacher->roles()->attach(Role::where('name', 'teacher')->first());
         $admin->roles()->attach(Role::where('name', 'admin')->first());
     }

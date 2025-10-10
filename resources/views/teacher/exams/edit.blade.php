@@ -88,18 +88,23 @@
 
                     <!-- Year -->
                     <div>
-                        <label for="year" class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="fas fa-calendar mr-2 text-gray-500"></i>Academic Year *
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-calendar mr-2 text-gray-500"></i>Year Level(s) *
                         </label>
-                        <input
-                            type="text"
-                            id="year"
-                            name="year"
-                            required
-                            value="{{ old('year', $exam->year) }}"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
-                            placeholder="e.g., 2025"
-                        />
+                        <div class="grid grid-cols-4 gap-3">
+                            @foreach(['1', '2', '3', '4'] as $yearOption)
+                                <label class="flex items-center space-x-2 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-indigo-50 transition">
+                                    <input
+                                        type="checkbox"
+                                        name="year[]"
+                                        value="{{ $yearOption }}"
+                                        {{ in_array($yearOption, old('year', $exam->year ?? [])) ? 'checked' : '' }}
+                                        class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                    />
+                                    <span class="text-sm font-medium text-gray-700">Year {{ $yearOption }}</span>
+                                </label>
+                            @endforeach
+                        </div>
                         @error('year')
                             <p class="mt-2 text-sm text-red-600 flex items-center">
                                 <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
@@ -109,25 +114,30 @@
 
                     <!-- Sections -->
                     <div>
-                        <label for="sections" class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="fas fa-users-class mr-2 text-gray-500"></i>Sections *
+                        <label class="block text-sm font-medium text-gray-700 mb-3">
+                            <i class="fas fa-users-class mr-2 text-gray-500"></i>Section(s) *
                         </label>
-                        <input
-                            type="text"
-                            id="sections"
-                            name="sections"
-                            required
-                            value="{{ old('sections', is_array($exam->sections) ? implode(', ', $exam->sections) : $exam->sections) }}"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
-                            placeholder="e.g., A, B, C or just A"
-                        />
+                        <div class="grid grid-cols-7 gap-2">
+                            @foreach(['a', 'b', 'c', 'd', 'e', 'f', 'g'] as $sectionOption)
+                                <label class="flex items-center justify-center space-x-2 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-indigo-50 transition">
+                                    <input
+                                        type="checkbox"
+                                        name="sections[]"
+                                        value="{{ $sectionOption }}"
+                                        {{ in_array($sectionOption, old('sections', $exam->sections ?? [])) ? 'checked' : '' }}
+                                        class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                    />
+                                    <span class="text-sm font-medium text-gray-700 uppercase">{{ $sectionOption }}</span>
+                                </label>
+                            @endforeach
+                        </div>
                         @error('sections')
                             <p class="mt-2 text-sm text-red-600 flex items-center">
                                 <i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}
                             </p>
                         @enderror
                         <p class="mt-2 text-xs text-gray-500">
-                            <i class="fas fa-info-circle mr-1"></i>Enter sections separated by commas (e.g., "A, B, C")
+                            <i class="fas fa-info-circle mr-1"></i>Select one or more sections that can take this exam
                         </p>
                     </div>
                 </div>

@@ -56,25 +56,23 @@ class ExamController extends Controller
             'description' => 'nullable|string',
             'starts_at' => 'required|date',
             'ends_at' => 'required|date|after:starts_at',
-            'year' => 'required|string',
-            'sections' => 'required', // string like "E,F" or array
+            'year' => 'required|array',
+            'year.*' => 'required|in:1,2,3,4',
+            'sections' => 'required|array',
+            'sections.*' => 'required|in:a,b,c,d,e,f,g',
             'total_points' => 'integer|min:0',
             'tos' => 'required|array',
         ]);
 
-        // Normalize sections (accepts comma-separated string or array)
-        $sectionsInput = $request->input('sections');
-        if (is_string($sectionsInput)) {
-            $sections = array_values(array_filter(array_map(static function ($s) {
-                return trim($s);
-            }, explode(',', $sectionsInput)), static fn ($v) => $v !== ''));
-        } elseif (is_array($sectionsInput)) {
-            $sections = array_values(array_filter(array_map(static function ($s) {
-                return is_string($s) ? trim($s) : $s;
-            }, $sectionsInput), static fn ($v) => $v !== '' && $v !== null));
-        } else {
-            $sections = [];
+        // Normalize years
+        $years = array_values(array_filter($validated['year'], static fn ($v) => $v !== '' && $v !== null));
+
+        if (empty($years)) {
+            return back()->withErrors(['year' => 'At least one year is required.'])->withInput();
         }
+
+        // Normalize sections
+        $sections = array_values(array_filter($validated['sections'], static fn ($v) => $v !== '' && $v !== null));
 
         if (empty($sections)) {
             return back()->withErrors(['sections' => 'At least one section is required.'])->withInput();
@@ -85,7 +83,7 @@ class ExamController extends Controller
             'description' => $validated['description'] ?? null,
             'starts_at' => $validated['starts_at'],
             'ends_at' => $validated['ends_at'],
-            'year' => $validated['year'],
+            'year' => $years,
             'sections' => $sections,
             'status' => 'draft', // Always create as draft
             'total_points' => $validated['total_points'] ?? 0,
@@ -145,8 +143,10 @@ class ExamController extends Controller
             'description' => 'nullable|string',
             'starts_at' => 'sometimes|date',
             'ends_at' => 'sometimes|date|after:starts_at',
-            'year' => 'sometimes|string',
-            'sections' => 'sometimes',
+            'year' => 'sometimes|array',
+            'year.*' => 'required|in:1,2,3,4',
+            'sections' => 'sometimes|array',
+            'sections.*' => 'required|in:a,b,c,d,e,f,g',
             'status' => 'sometimes|in:draft,ready,published,ongoing,closed,graded,archived',
             'total_points' => 'sometimes|integer|min:0',
             'tos' => 'sometimes|array',
@@ -154,19 +154,23 @@ class ExamController extends Controller
 
         $payload = $validated;
 
+        // Normalize years when provided
+        if ($request->has('year')) {
+            $years = array_values(array_filter($validated['year'], static fn ($v) => $v !== '' && $v !== null));
+
+            if (empty($years)) {
+                return back()->withErrors(['year' => 'At least one year is required.'])->withInput();
+            }
+
+            $payload['year'] = $years;
+        }
+
         // Normalize sections when provided
         if ($request->has('sections')) {
-            $sectionsInput = $request->input('sections');
-            if (is_string($sectionsInput)) {
-                $sections = array_values(array_filter(array_map(static function ($s) {
-                    return trim($s);
-                }, explode(',', $sectionsInput)), static fn ($v) => $v !== ''));
-            } elseif (is_array($sectionsInput)) {
-                $sections = array_values(array_filter(array_map(static function ($s) {
-                    return is_string($s) ? trim($s) : $s;
-                }, $sectionsInput), static fn ($v) => $v !== '' && $v !== null));
-            } else {
-                $sections = [];
+            $sections = array_values(array_filter($validated['sections'], static fn ($v) => $v !== '' && $v !== null));
+
+            if (empty($sections)) {
+                return back()->withErrors(['sections' => 'At least one section is required.'])->withInput();
             }
 
             $payload['sections'] = $sections;

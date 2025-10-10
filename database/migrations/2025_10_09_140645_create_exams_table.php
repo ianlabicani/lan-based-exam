@@ -17,9 +17,9 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->dateTime('starts_at');
             $table->dateTime('ends_at');
-            $table->string('year')->nullable();
+            $table->json('year')->nullable();
             $table->json('sections')->nullable();
-            $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
+            $table->enum('status', ['draft', 'ready', 'published', 'ongoing', 'closed', 'graded', 'archived'])->default('draft');
             $table->integer('total_points')->default(0);
             $table->json('tos')->nullable()->comment('Table of Specifications');
             $table->timestamps();
