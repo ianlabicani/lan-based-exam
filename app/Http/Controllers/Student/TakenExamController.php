@@ -4,191 +4,384 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Models\Exam;
+use App\Models\ExamItem;
 use App\Models\TakenExam;
+use App\Models\TakenExamAnswer;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class TakenExamController extends Controller
 {
     /**
-     * Display a listing of taken exams for a specific exam.
+     * Display all taken exams for the authenticated student
      */
-    public function index($examId)
+    public function index()
     {
-        // Verify the exam belongs to the authenticated teacher
-        $exam = Exam::whereHas('teachers', function ($query) {
-            $query->where('teacher_id', Auth::id());
-        })->findOrFail($examId);
+        $user = Auth::user();
 
-        $takenExams = TakenExam::with(['user', 'answers.item', 'exam.items'])
-            ->where('exam_id', $exam->id)
-            ->orderBy('submitted_at', 'desc')
+        // Get all taken exams for this student
+        $takenExams = TakenExam::with(['exam.items'])
+            ->where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($takenExam) {
-                // Compare answers for each takenExam
-                $takenExam->answer_comparison = $this->compareAnswers($takenExam->exam->items, $takenExam->answers);
+                // Add computed properties
+                $takenExam->is_ongoing = $takenExam->submitted_at === null;
+                $takenExam->is_completed = $takenExam->submitted_at !== null;
+
+                if ($takenExam->exam) {
+                    $takenExam->percentage = $takenExam->exam->total_points > 0
+                        ? round(($takenExam->total_points / $takenExam->exam->total_points) * 100, 2)
+                        : 0;
+                }
 
                 return $takenExam;
             });
 
-        return view('teacher.exams.takers', compact('exam', 'takenExams'));
+        return view('student.taken-exams.index', compact('takenExams'));
     }
 
     /**
-     * Display details of a specific taken exam.
+     * Start a new exam session (create)
      */
-    public function show($examId, $takenExamId)
+    public function create(Request $request)
     {
-        // Verify the exam belongs to the authenticated teacher
-        $exam = Exam::whereHas('teachers', function ($query) {
-            $query->where('teacher_id', Auth::id());
-        })->findOrFail($examId);
+        $examId = $request->input('exam_id');
 
-        $takenExam = TakenExam::with(['user', 'answers.item', 'exam.items'])
-            ->where('exam_id', $exam->id)
-            ->findOrFail($takenExamId);
-
-        // Compare exam items with student answers
-        $comparison = $this->compareAnswers($takenExam->exam->items, $takenExam->answers);
-
-        return view('teacher.exams.taken-exam-details', compact('exam', 'takenExam', 'comparison'));
-    }
-
-    /**
-     * Compare exam items with student answers
-     */
-    private function compareAnswers($examItems, $studentAnswers)
-    {
-        // Create a lookup for student answers by exam_item_id
-        $answerLookup = $studentAnswers->keyBy('exam_item_id');
-
-        return $examItems->map(function ($item) use ($answerLookup) {
-            $studentAnswer = $answerLookup->get($item->id);
-            $correctAnswer = $this->getCorrectAnswer($item);
-
-            $isCorrect = false;
-            $studentResponse = null;
-            $pointsEarned = 0;
-
-            if ($studentAnswer) {
-                $studentResponse = $studentAnswer->answer;
-                $isCorrect = $this->checkAnswer($item, $studentAnswer->answer, $correctAnswer);
-                $pointsEarned = $studentAnswer->points_earned ?? 0;
-            }
-
-            return [
-                'exam_item_id' => $item->id,
-                'type' => $item->type,
-                'question' => $item->question,
-                'points' => $item->points,
-                'points_earned' => $pointsEarned,
-                'correct_answer' => $correctAnswer,
-                'student_answer' => $studentResponse,
-                'is_correct' => $isCorrect,
-                'answered' => $studentAnswer !== null,
-                'options' => $item->options ?? null,
-                'pairs' => $item->pairs ?? null,
-                'expected_answer' => $item->expected_answer ?? null,
-            ];
-        });
-    }
-
-    /**
-     * Get correct answer for a single exam item
-     */
-    private function getCorrectAnswer($item)
-    {
-        switch ($item->type) {
-            case 'mcq':
-                $options = collect($item->options ?? []);
-                $correctIndex = $options->search(function ($opt) {
-                    return is_array($opt)
-                        ? (! empty($opt['correct']))
-                        : (! empty($opt->correct));
-                });
-
-                return $correctIndex !== false ? $correctIndex : null;
-
-            case 'truefalse':
-                return $item->answer;
-
-            case 'matching':
-                return $item->pairs;
-
-            case 'fillblank':
-            case 'fill_blank':
-                return $item->expected_answer;
-
-            case 'shortanswer':
-                return $item->expected_answer;
-
-            case 'essay':
-                return 'Manual grading required';
-
-            default:
-                return null;
-        }
-    }
-
-    /**
-     * Check if student answer is correct
-     */
-    private function checkAnswer($item, $studentAnswer, $correctAnswer)
-    {
-        if ($correctAnswer === null || $correctAnswer === 'Manual grading required') {
-            return null; // Cannot auto-check
+        if (!$examId) {
+            return redirect()->route('student.exams.index')
+                ->with('error', 'Exam ID is required.');
         }
 
-        switch ($item->type) {
-            case 'mcq':
-                return (int) $studentAnswer === (int) $correctAnswer;
+        $exam = Exam::with('items')->findOrFail($examId);
+        $user = Auth::user();
 
-            case 'truefalse':
-                $expected = strtolower(trim((string) $correctAnswer));
-                $student = strtolower(trim((string) $studentAnswer));
-
-                return $expected === $student;
-
-            case 'matching':
-                return $studentAnswer === $correctAnswer;
-
-            case 'fillblank':
-            case 'fill_blank':
-            case 'shortanswer':
-                return strtolower(trim((string) $studentAnswer)) === strtolower(trim((string) $correctAnswer));
-
-            case 'essay':
-                return null; // Manual grading
-
-            default:
-                return null;
+        // Check if exam is available
+        if ($exam->status !== 'ongoing') {
+            return redirect()->route('student.exams.index')
+                ->with('error', 'This exam is not currently available.');
         }
-    }
 
-    /**
-     * Update points for a manually graded answer.
-     */
-    public function updatePoints(Request $request, $examId, $takenExamId, $answerId)
-    {
-        // Verify the exam belongs to the authenticated teacher
-        $exam = Exam::whereHas('teachers', function ($query) {
-            $query->where('teacher_id', Auth::id());
-        })->findOrFail($examId);
+        // Check if already taken
+        $existingTakenExam = TakenExam::where('exam_id', $exam->id)
+            ->where('user_id', $user->id)
+            ->first();
 
-        $takenExam = TakenExam::where('exam_id', $exam->id)->findOrFail($takenExamId);
+        if ($existingTakenExam && $existingTakenExam->submitted_at) {
+            return redirect()->route('student.taken-exams.show', $existingTakenExam->id)
+                ->with('info', 'You have already submitted this exam.');
+        }
 
-        $answer = $takenExam->answers()->findOrFail($answerId);
+        // If ongoing, redirect to continue
+        if ($existingTakenExam) {
+            return redirect()->route('student.taken-exams.continue', $existingTakenExam->id);
+        }
 
-        $validated = $request->validate([
-            'points_earned' => 'required|integer|min:0|max:'.$answer->item->points,
+        // Create new taken exam
+        $takenExam = TakenExam::create([
+            'exam_id' => $exam->id,
+            'user_id' => $user->id,
+            'started_at' => now(),
+            'total_points' => 0,
         ]);
 
-        $answer->update($validated);
+        // Load with relationships
+        $takenExam->load(['exam.items', 'answers']);
 
-        // Recalculate total points for the taken exam
-        $totalPoints = $takenExam->answers()->sum('points_earned');
-        $takenExam->update(['total_points' => $totalPoints]);
+        return view('student.taken-exams.create', compact('exam', 'takenExam'));
+    }
 
-        return redirect()->back()->with('success', 'Points updated successfully!');
+    /**
+     * Continue an ongoing exam
+     */
+    public function continue($id)
+    {
+        $user = Auth::user();
+
+        $takenExam = TakenExam::with(['exam.items', 'answers'])
+            ->where('user_id', $user->id)
+            ->findOrFail($id);
+
+        // Check if already submitted
+        if ($takenExam->submitted_at) {
+            return redirect()->route('student.taken-exams.show', $takenExam->id)
+                ->with('info', 'This exam has already been submitted.');
+        }
+
+        // Check if exam is still available
+        if ($takenExam->exam->status !== 'ongoing') {
+            return redirect()->route('student.taken-exams.index')
+                ->with('error', 'This exam is no longer available.');
+        }
+
+        $exam = $takenExam->exam;
+
+        return view('student.taken-exams.create', compact('exam', 'takenExam'));
+    }
+
+    /**
+     * Display a completed exam (read-only review)
+     */
+    public function show($id)
+    {
+        $user = Auth::user();
+
+        $takenExam = TakenExam::with(['exam.items', 'answers.item'])
+            ->where('user_id', $user->id)
+            ->findOrFail($id);
+
+        if (!$takenExam->submitted_at) {
+            return redirect()->route('student.taken-exams.continue', $takenExam->id)
+                ->with('info', 'Please complete and submit the exam first.');
+        }
+
+        // Calculate statistics
+        $exam = $takenExam->exam;
+        $totalQuestions = $exam->items->count();
+        $answeredQuestions = $takenExam->answers->count();
+        $correctAnswers = $takenExam->answers->where('points_earned', '>', 0)->count();
+        $percentage = $exam->total_points > 0
+            ? round(($takenExam->total_points / $exam->total_points) * 100, 2)
+            : 0;
+
+        return view('student.taken-exams.show', compact(
+            'exam',
+            'takenExam',
+            'totalQuestions',
+            'answeredQuestions',
+            'correctAnswers',
+            'percentage'
+        ));
+    }
+
+    /**
+     * Start exam (API endpoint - returns JSON)
+     */
+    public function start(Request $request)
+    {
+        $validated = $request->validate([
+            'exam_id' => 'required|exists:exams,id',
+        ]);
+
+        $user = Auth::user();
+        $exam = Exam::with('items')->findOrFail($validated['exam_id']);
+
+        // Check if exam is available
+        if ($exam->status !== 'ongoing') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This exam is not currently available.',
+            ], 403);
+        }
+
+        // Check if already taken
+        $existingTakenExam = TakenExam::where('exam_id', $exam->id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if ($existingTakenExam && $existingTakenExam->submitted_at) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You have already submitted this exam.',
+            ], 403);
+        }
+
+        if ($existingTakenExam) {
+            return response()->json([
+                'success' => true,
+                'taken_exam_id' => $existingTakenExam->id,
+                'message' => 'Exam already started.',
+            ]);
+        }
+
+        // Create new taken exam
+        $takenExam = TakenExam::create([
+            'exam_id' => $exam->id,
+            'user_id' => $user->id,
+            'started_at' => now(),
+            'total_points' => 0,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'taken_exam_id' => $takenExam->id,
+            'exam' => $exam,
+            'message' => 'Exam started successfully.',
+        ]);
+    }
+
+    /**
+     * Save answer (AJAX)
+     */
+    public function saveAnswer(Request $request, $id)
+    {
+        $user = Auth::user();
+
+        $takenExam = TakenExam::where('user_id', $user->id)
+            ->findOrFail($id);
+
+        // Check if already submitted
+        if ($takenExam->submitted_at) {
+            return response()->json(['error' => 'Exam already submitted'], 403);
+        }
+
+        $validated = $request->validate([
+            'item_id' => 'required|exists:exam_items,id',
+            'answer' => 'required',
+        ]);
+
+        // Save or update answer
+        $answer = TakenExamAnswer::updateOrCreate(
+            [
+                'taken_exam_id' => $takenExam->id,
+                'exam_item_id' => $validated['item_id'],
+            ],
+            [
+                'answer' => $validated['answer'],
+            ]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Answer saved successfully',
+        ]);
+    }
+
+    /**
+     * Submit exam
+     */
+    public function submit(Request $request, $id)
+    {
+        $user = Auth::user();
+
+        $takenExam = TakenExam::with('exam.items')
+            ->where('user_id', $user->id)
+            ->findOrFail($id);
+
+        // Check if already submitted
+        if ($takenExam->submitted_at) {
+            return redirect()->route('student.taken-exams.show', $takenExam->id)
+                ->with('info', 'You have already submitted this exam.');
+        }
+
+        DB::beginTransaction();
+        try {
+            $exam = $takenExam->exam;
+
+            // Auto-grade objective questions
+            foreach ($exam->items as $item) {
+                $answer = TakenExamAnswer::where('taken_exam_id', $takenExam->id)
+                    ->where('exam_item_id', $item->id)
+                    ->first();
+
+                if ($answer) {
+                    $pointsEarned = $this->gradeAnswer($item, $answer->answer);
+                    $answer->update(['points_earned' => $pointsEarned]);
+                }
+            }
+
+            // Calculate total points
+            $totalPoints = $takenExam->answers()->sum('points_earned');
+
+            // Check if there are any essay or short answer questions
+            $hasManualGradingItems = $exam->items->whereIn('type', ['essay', 'shortanswer'])->count() > 0;
+
+            // Set status based on whether manual grading is needed
+            $status = $hasManualGradingItems ? 'submitted' : 'graded';
+
+            // Mark as submitted
+            $takenExam->update([
+                'submitted_at' => now(),
+                'total_points' => $totalPoints,
+                'status' => $status,
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('student.taken-exams.show', $takenExam->id)
+                ->with('success', 'Exam submitted successfully!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Exam submission failed: ' . $e->getMessage());
+
+            return redirect()->back()
+                ->with('error', 'Failed to submit exam. Please try again.');
+        }
+    }
+
+    /**
+     * Log activity (tab switch, window blur)
+     */
+    public function logActivity(Request $request, $id)
+    {
+        $user = Auth::user();
+
+        $takenExam = TakenExam::where('user_id', $user->id)
+            ->findOrFail($id);
+
+        $validated = $request->validate([
+            'event_type' => 'required|in:tab_switch,window_blur,visibility_change',
+            'timestamp' => 'required|date',
+        ]);
+
+        // Log the activity (you can create a separate ActivityLog model if needed)
+        Log::info('Exam Activity', [
+            'taken_exam_id' => $takenExam->id,
+            'user_id' => $user->id,
+            'event_type' => $validated['event_type'],
+            'timestamp' => $validated['timestamp'],
+        ]);
+
+        // Optionally, store in database
+        // ActivityLog::create([...]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Activity logged',
+        ]);
+    }
+
+    /**
+     * Grade a single answer
+     */
+    private function gradeAnswer($item, $studentAnswer)
+    {
+        switch ($item->type) {
+            case 'mcq':
+                $correctOption = null;
+                foreach ($item->options as $index => $option) {
+                    if (isset($option['correct']) && $option['correct']) {
+                        $correctOption = $index;
+                        break;
+                    }
+                }
+                return (int) $studentAnswer === $correctOption ? $item->points : 0;
+
+            case 'truefalse':
+                $expected = strtolower(trim($item->answer));
+                $student = strtolower(trim($studentAnswer));
+                return $expected === $student ? $item->points : 0;
+
+            case 'fillblank':
+            case 'fill_blank':
+                $expected = strtolower(trim($item->expected_answer));
+                $student = strtolower(trim($studentAnswer));
+                return $expected === $student ? $item->points : 0;
+
+            case 'shortanswer':
+            case 'essay':
+                // Manual grading required
+                return 0;
+
+            case 'matching':
+                return $studentAnswer === $item->pairs ? $item->points : 0;
+
+            default:
+                return 0;
+        }
     }
 }

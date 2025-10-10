@@ -12,10 +12,11 @@ class TakenExamAnswer extends Model
         'exam_item_id',
         'answer',
         'points_earned',
+        'feedback',
     ];
 
     protected $casts = [
-        'points_earned' => 'integer',
+        'points_earned' => 'float',
     ];
 
     /**

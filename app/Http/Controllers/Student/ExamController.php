@@ -9,7 +9,6 @@ use App\Models\TakenExamAnswer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class ExamController extends Controller
 {
@@ -21,7 +20,7 @@ class ExamController extends Controller
         $user = Auth::user();
 
         // Get published exams for student's year and section
-        $exams = Exam::where('status', 'published')
+        $exams = Exam::where('status', 'ongoing')
             ->where(function ($query) use ($user) {
                 // Check if student's year is in the year array
                 $query->whereJsonContains('year', $user->year)
@@ -60,7 +59,7 @@ class ExamController extends Controller
         $exam = Exam::with('items')->findOrFail($id);
 
         // Verify exam is available
-        if (!$this->isExamAvailable($exam)) {
+        if (! $this->isExamAvailable($exam)) {
             return redirect()->route('student.exams.index')
                 ->with('error', 'This exam is not currently available.');
         }
@@ -76,12 +75,12 @@ class ExamController extends Controller
         }
 
         // If not started, create taken exam record
-        if (!$takenExam) {
+        if (! $takenExam) {
             $takenExam = TakenExam::create([
                 'exam_id' => $exam->id,
                 'user_id' => $user->id,
                 'started_at' => now(),
-                'total_points' => 0
+                'total_points' => 0,
             ]);
         }
 
@@ -101,7 +100,7 @@ class ExamController extends Controller
 
         $validated = $request->validate([
             'item_id' => 'required|exists:exam_items,id',
-            'answer' => 'required'
+            'answer' => 'required',
         ]);
 
         $takenExam = TakenExam::where('exam_id', $exam->id)
@@ -117,16 +116,16 @@ class ExamController extends Controller
         $answer = TakenExamAnswer::updateOrCreate(
             [
                 'taken_exam_id' => $takenExam->id,
-                'exam_item_id' => $validated['item_id']
+                'exam_item_id' => $validated['item_id'],
             ],
             [
-                'answer' => $validated['answer']
+                'answer' => $validated['answer'],
             ]
         );
 
         return response()->json([
             'success' => true,
-            'message' => 'Answer saved successfully'
+            'message' => 'Answer saved successfully',
         ]);
     }
 
@@ -168,7 +167,7 @@ class ExamController extends Controller
             // Mark as submitted
             $takenExam->update([
                 'submitted_at' => now(),
-                'total_points' => $totalPoints
+                'total_points' => $totalPoints,
             ]);
 
             DB::commit();
@@ -178,6 +177,7 @@ class ExamController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return redirect()->back()
                 ->with('error', 'Failed to submit exam. Please try again.');
         }
@@ -196,7 +196,7 @@ class ExamController extends Controller
             ->with('answers.item')
             ->firstOrFail();
 
-        if (!$takenExam->submitted_at) {
+        if (! $takenExam->submitted_at) {
             return redirect()->route('student.exams.take', $exam->id)
                 ->with('info', 'Please complete and submit the exam first.');
         }
@@ -222,15 +222,9 @@ class ExamController extends Controller
      */
     private function isExamAvailable($exam)
     {
-        if ($exam->status !== 'published') {
-            return false;
-        }
-
-        $now = Carbon::now();
-        $startsAt = Carbon::parse($exam->starts_at);
-        $endsAt = Carbon::parse($exam->ends_at);
-
-        return $now->between($startsAt, $endsAt);
+        // Exam is available if status is 'ongoing'
+        // Teacher can manually set it to ongoing OR it can auto-transition based on schedule
+        return $exam->status === 'ongoing';
     }
 
     /**
@@ -247,17 +241,20 @@ class ExamController extends Controller
                         break;
                     }
                 }
-                return (int)$studentAnswer === $correctOption ? $item->points : 0;
+
+                return (int) $studentAnswer === $correctOption ? $item->points : 0;
 
             case 'truefalse':
                 $expected = strtolower(trim($item->answer));
                 $student = strtolower(trim($studentAnswer));
+
                 return $expected === $student ? $item->points : 0;
 
             case 'fillblank':
             case 'fill_blank':
                 $expected = strtolower(trim($item->expected_answer));
                 $student = strtolower(trim($studentAnswer));
+
                 return $expected === $student ? $item->points : 0;
 
             case 'shortanswer':

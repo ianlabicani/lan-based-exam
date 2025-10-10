@@ -117,7 +117,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-gray-600 text-sm font-medium">Total Takers</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-2">0</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-2">{{ $totalTakers }}</p>
                     </div>
                     <div class="bg-green-100 w-12 h-12 rounded-full flex items-center justify-center">
                         <i class="fas fa-users text-xl text-green-600"></i>
@@ -129,7 +129,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-gray-600 text-sm font-medium">Completed</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-2">0</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-2">{{ $completedCount }}</p>
                     </div>
                     <div class="bg-purple-100 w-12 h-12 rounded-full flex items-center justify-center">
                         <i class="fas fa-check-circle text-xl text-purple-600"></i>
@@ -141,7 +141,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-gray-600 text-sm font-medium">Average Score</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-2">--</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-2">{{ $averageScore > 0 ? $averageScore : '--' }}</p>
                     </div>
                     <div class="bg-indigo-100 w-12 h-12 rounded-full flex items-center justify-center">
                         <i class="fas fa-chart-line text-xl text-indigo-600"></i>
@@ -164,7 +164,7 @@
                     </a>
                     <a href="?tab=takers" class="group inline-flex items-center py-4 px-6 border-b-2 font-medium text-sm {{ $activeTab === 'takers' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                         <i class="fas fa-users mr-2"></i>
-                        Takers (0)
+                        Takers ({{ $totalTakers }})
                     </a>
                     <a href="?tab=results" class="group inline-flex items-center py-4 px-6 border-b-2 font-medium text-sm {{ $activeTab === 'results' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }}">
                         <i class="fas fa-chart-bar mr-2"></i>
@@ -180,7 +180,7 @@
                 @elseif($activeTab === 'items')
                     @include('teacher.exams.partials.items', ['exam' => $exam, 'examItems' => $examItems])
                 @elseif($activeTab === 'takers')
-                    @include('teacher.exams.partials.takers', ['exam' => $exam])
+                    @include('teacher.exams.partials.takers', ['exam' => $exam, 'takers' => $takers])
                 @elseif($activeTab === 'results')
                     @include('teacher.exams.partials.results', ['exam' => $exam])
                 @endif

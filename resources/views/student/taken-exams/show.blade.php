@@ -86,8 +86,19 @@
                 @foreach($exam->items as $index => $item)
                     @php
                         $answer = $takenExam->answers->firstWhere('exam_item_id', $item->id);
-                        $isCorrect = $answer && $answer->points_earned > 0;
                         $isManualGrading = in_array($item->type, ['essay', 'shortanswer']);
+
+                        // For manual grading items, use teacher_score if available, otherwise points_earned
+                        $pointsEarned = 0;
+                        if ($answer) {
+                            if ($isManualGrading && $answer->teacher_score !== null) {
+                                $pointsEarned = $answer->teacher_score;
+                            } else {
+                                $pointsEarned = $answer->points_earned ?? 0;
+                            }
+                        }
+
+                        $isCorrect = $pointsEarned > 0;
                     @endphp
 
                     <div class="border-2 rounded-lg p-6
@@ -122,11 +133,11 @@
                             <div class="ml-4 text-right">
                                 @if($answer)
                                     <div class="px-4 py-2 rounded-lg font-bold
-                                                {{ $isCorrect ? 'bg-green-600 text-white' : ($isManualGrading ? 'bg-gray-400 text-white' : 'bg-red-600 text-white') }}">
-                                        @if($isManualGrading && $answer->points_earned === 0)
+                                                {{ $isCorrect ? 'bg-green-600 text-white' : ($isManualGrading && $answer->teacher_score === null ? 'bg-yellow-400 text-white' : 'bg-red-600 text-white') }}">
+                                        @if($isManualGrading && $answer->teacher_score === null)
                                             <span class="text-sm">Pending</span>
                                         @else
-                                            <span class="text-xl">{{ $answer->points_earned }}</span>
+                                            <span class="text-xl">{{ $pointsEarned }}</span>
                                             <span class="text-sm">/ {{ $item->points }}</span>
                                         @endif
                                     </div>
@@ -134,7 +145,7 @@
                                         <p class="text-xs text-green-700 mt-1 font-medium">
                                             <i class="fas fa-check-circle mr-1"></i>Correct
                                         </p>
-                                    @elseif($isManualGrading && $answer->points_earned === 0)
+                                    @elseif($isManualGrading && $answer->teacher_score === null)
                                         <p class="text-xs text-gray-600 mt-1">
                                             <i class="fas fa-clock mr-1"></i>Manual Grading
                                         </p>
@@ -238,7 +249,7 @@
                                 <div class="space-y-3">
                                     <div class="bg-blue-50 p-4 rounded-lg border-2 border-blue-200">
                                         <p class="text-xs text-gray-600 font-semibold mb-2 uppercase">Your Answer:</p>
-                                        <p class="text-gray-900">{{ $answer ? $answer->answer : 'Not answered' }}</p>
+                                        <p class="text-gray-900 whitespace-pre-wrap">{{ $answer ? $answer->answer : 'Not answered' }}</p>
                                     </div>
 
                                     @if($item->expected_answer && !in_array($item->type, ['essay']))
@@ -248,13 +259,32 @@
                                         </div>
                                     @endif
 
-                                    @if($item->type === 'essay' && $answer && $answer->points_earned === 0)
-                                        <div class="bg-yellow-50 p-4 rounded-lg border-2 border-yellow-200">
-                                            <p class="text-sm text-yellow-800">
-                                                <i class="fas fa-info-circle mr-1"></i>
-                                                This essay is pending manual grading by your teacher.
-                                            </p>
-                                        </div>
+                                    @if(in_array($item->type, ['essay', 'shortanswer']))
+                                        @if($answer && $answer->teacher_score !== null)
+                                            <!-- Teacher Graded -->
+                                            <div class="bg-indigo-50 p-4 rounded-lg border-2 border-indigo-200">
+                                                <div class="flex items-center justify-between mb-2">
+                                                    <p class="text-xs text-indigo-600 font-semibold uppercase">Teacher's Score:</p>
+                                                    <span class="text-2xl font-bold text-indigo-700">
+                                                        {{ $answer->teacher_score }} / {{ $item->points }}
+                                                    </span>
+                                                </div>
+                                                @if($answer->feedback)
+                                                    <div class="mt-3 pt-3 border-t border-indigo-200">
+                                                        <p class="text-xs text-indigo-600 font-semibold mb-2 uppercase">Teacher's Feedback:</p>
+                                                        <p class="text-gray-900 whitespace-pre-wrap">{{ $answer->feedback }}</p>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        @else
+                                            <!-- Pending Grading -->
+                                            <div class="bg-yellow-50 p-4 rounded-lg border-2 border-yellow-200">
+                                                <p class="text-sm text-yellow-800">
+                                                    <i class="fas fa-clock mr-2"></i>
+                                                    This response is pending manual grading by your teacher.
+                                                </p>
+                                            </div>
+                                        @endif
                                     @endif
                                 </div>
                             @endif

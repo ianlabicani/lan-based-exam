@@ -113,7 +113,45 @@ class ExamController extends Controller
 
         $examItems = $exam->items;
 
-        return view('teacher.exams.show', compact('exam', 'examItems'));
+        // Get all takers (students who have taken this exam)
+        $takers = \App\Models\TakenExam::with(['user', 'answers'])
+            ->where('exam_id', $exam->id)
+            ->orderBy('submitted_at', 'desc')
+            ->get()
+            ->map(function ($takenExam) use ($exam) {
+                // Calculate percentage
+                $percentage = $exam->total_points > 0
+                    ? round(($takenExam->total_points / $exam->total_points) * 100, 2)
+                    : 0;
+
+                // Count answered questions
+                $answeredCount = $takenExam->answers->count();
+                $totalQuestions = $exam->items->count();
+
+                return [
+                    'id' => $takenExam->id,
+                    'user' => $takenExam->user,
+                    'started_at' => $takenExam->started_at,
+                    'submitted_at' => $takenExam->submitted_at,
+                    'total_points' => $takenExam->total_points,
+                    'percentage' => $percentage,
+                    'status' => $takenExam->status,
+                    'answered_count' => $answeredCount,
+                    'total_questions' => $totalQuestions,
+                    'duration' => $takenExam->started_at && $takenExam->submitted_at
+                        ? $takenExam->started_at->diffInMinutes($takenExam->submitted_at)
+                        : null,
+                ];
+            });
+
+        // Calculate statistics
+        $totalTakers = $takers->count();
+        $completedCount = $takers->where('submitted_at', '!=', null)->count();
+        $averageScore = $completedCount > 0
+            ? round($takers->where('submitted_at', '!=', null)->avg('total_points'), 2)
+            : 0;
+
+        return view('teacher.exams.show', compact('exam', 'examItems', 'takers', 'totalTakers', 'completedCount', 'averageScore'));
     }
 
     /**

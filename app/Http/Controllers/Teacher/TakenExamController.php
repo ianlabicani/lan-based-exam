@@ -50,7 +50,7 @@ class TakenExamController extends Controller
         // Compare exam items with student answers
         $comparison = $this->compareAnswers($takenExam->exam->items, $takenExam->answers);
 
-        return view('teacher.exams.taken-exam-details', compact('exam', 'takenExam', 'comparison'));
+        return view('teacher.taken-exams.show', compact('exam', 'takenExam', 'comparison'));
     }
 
     /**

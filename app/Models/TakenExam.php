@@ -14,6 +14,7 @@ class TakenExam extends Model
         'started_at',
         'submitted_at',
         'total_points',
+        'status',
     ];
 
     protected $casts = [

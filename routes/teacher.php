@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Teacher\ExamController;
 use App\Http\Controllers\Teacher\ExamItemController;
+use App\Http\Controllers\Teacher\GradingController;
 use App\Http\Controllers\Teacher\TakenExamController;
 use Illuminate\Support\Facades\Route;
 
@@ -38,8 +39,11 @@ Route::middleware(['auth', 'verified'])->prefix('teacher')->name('teacher.')->gr
         return view('teacher.analytics');
     })->name('analytics');
 
-    // Grading Route
-    Route::get('/grading', function () {
-        return view('teacher.grading');
-    })->name('grading');
+    // Grading Routes
+    Route::prefix('grading')->name('grading.')->group(function () {
+        Route::get('/', [GradingController::class, 'index'])->name('index');
+        Route::get('/taken-exams/{id}', [GradingController::class, 'show'])->name('show');
+        Route::patch('/taken-exams/{takenExamId}/items/{itemId}/score', [GradingController::class, 'updateScore'])->name('updateScore');
+        Route::patch('/taken-exams/{id}/finalize', [GradingController::class, 'finalizeGrade'])->name('finalize');
+    });
 });
