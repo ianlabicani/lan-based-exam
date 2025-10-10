@@ -10,13 +10,13 @@ use Illuminate\Support\Facades\Auth;
 class ExamController extends Controller
 {
     /**
-     * Display a listing of exams.
+     * Display a listing of exams with search and filters.
      */
     public function index(Request $request)
     {
         $user = Auth::user();
 
-        $exams = $user->exams()
+        $query = $user->exams()
             ->with('items') // Eager load items to get count
             ->select([
                 'exams.id',
@@ -30,8 +30,42 @@ class ExamController extends Controller
                 'exams.total_points',
                 'exams.created_at',
                 'exams.updated_at',
-            ])
-            ->orderBy('created_at', 'desc')
+            ]);
+
+        // Search functionality
+        if ($request->filled('search')) {
+            $searchTerm = $request->input('search');
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('title', 'like', "%{$searchTerm}%")
+                  ->orWhere('description', 'like', "%{$searchTerm}%");
+            });
+        }
+
+        // Status filter
+        if ($request->filled('status') && $request->input('status') !== 'all') {
+            $query->where('status', $request->input('status'));
+        }
+
+        // Year filter
+        if ($request->filled('year')) {
+            $query->whereJsonContains('year', $request->input('year'));
+        }
+
+        // Section filter
+        if ($request->filled('section')) {
+            $query->whereJsonContains('sections', $request->input('section'));
+        }
+
+        // Date range filter
+        if ($request->filled('date_from')) {
+            $query->whereDate('starts_at', '>=', $request->input('date_from'));
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('starts_at', '<=', $request->input('date_to'));
+        }
+
+        $exams = $query->orderBy('created_at', 'desc')
             ->get()
             ->makeHidden(['pivot']);
 
@@ -103,9 +137,16 @@ class ExamController extends Controller
      */
     public function show($id)
     {
-        $exam = Exam::with(['items' => function ($query) {
-            $query->orderBy('id', 'asc');
-        }])
+        // OPTIMIZED: Single query with all necessary relationships eager loaded
+        $exam = Exam::with([
+            'items' => function ($query) {
+                $query->orderBy('id', 'asc');
+            },
+            'takenExams' => function ($query) {
+                $query->with(['user', 'answers'])
+                    ->orderBy('submitted_at', 'desc');
+            }
+        ])
             ->whereHas('teachers', function ($query) {
                 $query->where('teacher_id', Auth::id());
             })
@@ -113,36 +154,32 @@ class ExamController extends Controller
 
         $examItems = $exam->items;
 
-        // Get all takers (students who have taken this exam)
-        $takers = \App\Models\TakenExam::with(['user', 'answers'])
-            ->where('exam_id', $exam->id)
-            ->orderBy('submitted_at', 'desc')
-            ->get()
-            ->map(function ($takenExam) use ($exam) {
-                // Calculate percentage
-                $percentage = $exam->total_points > 0
-                    ? round(($takenExam->total_points / $exam->total_points) * 100, 2)
-                    : 0;
+        // Use already loaded takenExams relationship (no additional query)
+        $takers = $exam->takenExams->map(function ($takenExam) use ($exam) {
+            // Calculate percentage
+            $percentage = $exam->total_points > 0
+                ? round(($takenExam->total_points / $exam->total_points) * 100, 2)
+                : 0;
 
-                // Count answered questions
-                $answeredCount = $takenExam->answers->count();
-                $totalQuestions = $exam->items->count();
+            // Count answered questions (already loaded via eager loading)
+            $answeredCount = $takenExam->answers->count();
+            $totalQuestions = $exam->items->count();
 
-                return [
-                    'id' => $takenExam->id,
-                    'user' => $takenExam->user,
-                    'started_at' => $takenExam->started_at,
-                    'submitted_at' => $takenExam->submitted_at,
-                    'total_points' => $takenExam->total_points,
-                    'percentage' => $percentage,
-                    'status' => $takenExam->status,
-                    'answered_count' => $answeredCount,
-                    'total_questions' => $totalQuestions,
-                    'duration' => $takenExam->started_at && $takenExam->submitted_at
-                        ? $takenExam->started_at->diffInMinutes($takenExam->submitted_at)
-                        : null,
-                ];
-            });
+            return [
+                'id' => $takenExam->id,
+                'user' => $takenExam->user,
+                'started_at' => $takenExam->started_at,
+                'submitted_at' => $takenExam->submitted_at,
+                'total_points' => $takenExam->total_points,
+                'percentage' => $percentage,
+                'status' => $takenExam->status,
+                'answered_count' => $answeredCount,
+                'total_questions' => $totalQuestions,
+                'duration' => $takenExam->started_at && $takenExam->submitted_at
+                    ? $takenExam->started_at->diffInMinutes($takenExam->submitted_at)
+                    : null,
+            ];
+        });
 
         // Calculate statistics
         $totalTakers = $takers->count();

@@ -26,36 +26,104 @@
 
         <!-- Filters and Search -->
         <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-                <!-- Status Filter -->
-                <div class="flex items-center space-x-2">
-                    <label class="text-sm font-medium text-gray-700">Filter by Status:</label>
-                    <div class="flex space-x-2">
-                        <a href="?status=all" class="px-4 py-2 rounded-lg text-sm font-medium transition duration-200 {{ $statusFilter === 'all' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                            All
-                        </a>
-                        <a href="?status=published" class="px-4 py-2 rounded-lg text-sm font-medium transition duration-200 {{ $statusFilter === 'published' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                            Published
-                        </a>
-                        <a href="?status=draft" class="px-4 py-2 rounded-lg text-sm font-medium transition duration-200 {{ $statusFilter === 'draft' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                            Draft
-                        </a>
-                        <a href="?status=archived" class="px-4 py-2 rounded-lg text-sm font-medium transition duration-200 {{ $statusFilter === 'archived' ? 'bg-gray-100 text-gray-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                            Archived
-                        </a>
+            <form method="GET" action="{{ route('teacher.exams.index') }}" class="space-y-4">
+                <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+                    <!-- Status Filter -->
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Filter by Status:</label>
+                        <div class="flex flex-wrap gap-2">
+                            <a href="?status=all{{ request('search') ? '&search=' . request('search') : '' }}"
+                               class="px-4 py-2 rounded-lg text-sm font-medium transition duration-200 {{ $statusFilter === 'all' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                                All
+                            </a>
+                            <a href="?status=published{{ request('search') ? '&search=' . request('search') : '' }}"
+                               class="px-4 py-2 rounded-lg text-sm font-medium transition duration-200 {{ $statusFilter === 'published' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                                Published
+                            </a>
+                            <a href="?status=draft{{ request('search') ? '&search=' . request('search') : '' }}"
+                               class="px-4 py-2 rounded-lg text-sm font-medium transition duration-200 {{ $statusFilter === 'draft' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                                Draft
+                            </a>
+                            <a href="?status=archived{{ request('search') ? '&search=' . request('search') : '' }}"
+                               class="px-4 py-2 rounded-lg text-sm font-medium transition duration-200 {{ $statusFilter === 'archived' ? 'bg-gray-100 text-gray-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                                Archived
+                            </a>
+                        </div>
                     </div>
+
+                    <!-- Search Input -->
+                    <div class="relative flex-1 md:max-w-md">
+                        <input
+                            type="text"
+                            name="search"
+                            value="{{ request('search') }}"
+                            placeholder="Search by title or description..."
+                            class="pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-full"
+                        />
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        @if(request('search'))
+                            <a href="{{ route('teacher.exams.index') }}?status={{ request('status', 'all') }}"
+                               class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        @endif
+                    </div>
+
+                    <!-- Search Button -->
+                    <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition duration-200">
+                        <i class="fas fa-search mr-2"></i>Search
+                    </button>
                 </div>
 
-                <!-- Search -->
-                <div class="relative">
-                    <input
-                        type="text"
-                        placeholder="Search exams..."
-                        class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-64"
-                    />
-                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <!-- Advanced Filters (Collapsible) -->
+                <div x-data="{ showAdvanced: false }" class="border-t pt-4 mt-4">
+                    <button type="button" @click="showAdvanced = !showAdvanced" class="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center">
+                        <i class="fas mr-2" :class="showAdvanced ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                        <span x-text="showAdvanced ? 'Hide Advanced Filters' : 'Show Advanced Filters'"></span>
+                    </button>
+
+                    <div x-show="showAdvanced" x-cloak x-transition class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                        <!-- Year Filter -->
+                        <div>
+                            <label for="year" class="block text-sm font-medium text-gray-700 mb-2">Year Level</label>
+                            <select name="year" id="year" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                <option value="">All Years</option>
+                                <option value="1" {{ request('year') == '1' ? 'selected' : '' }}>Year 1</option>
+                                <option value="2" {{ request('year') == '2' ? 'selected' : '' }}>Year 2</option>
+                                <option value="3" {{ request('year') == '3' ? 'selected' : '' }}>Year 3</option>
+                                <option value="4" {{ request('year') == '4' ? 'selected' : '' }}>Year 4</option>
+                            </select>
+                        </div>
+
+                        <!-- Section Filter -->
+                        <div>
+                            <label for="section" class="block text-sm font-medium text-gray-700 mb-2">Section</label>
+                            <select name="section" id="section" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                <option value="">All Sections</option>
+                                @foreach(['a', 'b', 'c', 'd', 'e', 'f', 'g'] as $sec)
+                                    <option value="{{ $sec }}" {{ request('section') == $sec ? 'selected' : '' }}>Section {{ strtoupper($sec) }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Date Range -->
+                        <div>
+                            <label for="date_from" class="block text-sm font-medium text-gray-700 mb-2">Date From</label>
+                            <input type="date" name="date_from" id="date_from" value="{{ request('date_from') }}"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        </div>
+
+                        <div class="md:col-span-3 flex justify-end gap-2">
+                            <a href="{{ route('teacher.exams.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition duration-200">
+                                Clear Filters
+                            </a>
+                            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition duration-200">
+                                Apply Filters
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </form>
         </div>
 
         <!-- Exams Grid -->

@@ -24,7 +24,7 @@
                     <a href="{{ route('teacher.exams.index') }}" class="px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium transition duration-200 {{ request()->routeIs('teacher.exams.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                         <i class="fas fa-file-alt mr-2"></i>Exams
                     </a>
-                    <a href="{{ route('teacher.analytics') }}" class="px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium transition duration-200 {{ request()->routeIs('teacher.analytics') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+                    <a href="{{ route('teacher.analytics.index') }}" class="px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium transition duration-200 {{ request()->routeIs('teacher.analytics.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                         <i class="fas fa-chart-line mr-2"></i>Analytics
                     </a>
                     <a href="{{ route('teacher.grading.index') }}" class="px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium transition duration-200 {{ request()->routeIs('teacher.grading.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
@@ -156,7 +156,7 @@
             <a href="{{ route('teacher.exams.index') }}" class="block px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium {{ request()->routeIs('teacher.exams.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                 <i class="fas fa-file-alt mr-2"></i>Exams
             </a>
-            <a href="{{ route('teacher.analytics') }}" class="block px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium {{ request()->routeIs('teacher.analytics') ? 'bg-indigo-50 text-indigo-600' : '' }}">
+            <a href="{{ route('teacher.analytics.index') }}" class="block px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium {{ request()->routeIs('teacher.analytics.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
                 <i class="fas fa-chart-line mr-2"></i>Analytics
             </a>
             <a href="{{ route('teacher.grading.index') }}" class="block px-4 py-2 rounded-lg text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 font-medium {{ request()->routeIs('teacher.grading.*') ? 'bg-indigo-50 text-indigo-600' : '' }}">
