@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Teacher\DashboardController;
 use App\Http\Controllers\Teacher\ExamController;
 use App\Http\Controllers\Teacher\ExamItemController;
 use App\Http\Controllers\Teacher\GradingController;
@@ -8,9 +9,7 @@ use App\Http\Controllers\Teacher\AnalyticsController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->prefix('teacher')->name('teacher.')->group(function () {
-    Route::get('/dashboard', function () {
-        return view('teacher.dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Exam Routes
     Route::prefix('exams')->name('exams.')->group(function () {
