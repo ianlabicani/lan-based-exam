@@ -117,6 +117,8 @@
                                         <span class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full">Short Answer</span>
                                     @elseif($item->type === 'essay')
                                         <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">Essay</span>
+                                    @elseif($item->type === 'matching')
+                                        <span class="px-2 py-1 bg-pink-100 text-pink-700 text-xs rounded-full">Matching</span>
                                     @endif
                                 </div>
                                 <h3 class="text-lg font-bold text-gray-900">{{ $item->question }}</h3>
@@ -235,6 +237,74 @@
                                             @endif
                                         </div>
                                     </div>
+                                </div>
+
+                            @elseif($item->type === 'matching')
+                                <!-- Matching Type -->
+                                @php
+                                    $studentAnswer = $answer ? json_decode($answer->answer, true) : [];
+                                    $pairs = $item->pairs ?? [];
+                                @endphp
+                                <div class="space-y-3">
+                                    <p class="text-xs text-gray-600 font-semibold mb-3 uppercase">
+                                        <i class="fas fa-link mr-1"></i>Match the items:
+                                    </p>
+                                    @foreach($pairs as $pairIndex => $pair)
+                                        @php
+                                            // Get student's answer for this pair (right-side index)
+                                            $studentRightIndex = $studentAnswer[$pairIndex] ?? null;
+                                            $studentRightText = isset($studentRightIndex) && isset($pairs[$studentRightIndex])
+                                                ? $pairs[$studentRightIndex]['right']
+                                                : null;
+
+                                            // Correct answer is matching index (left index matches right index)
+                                            $correctRightText = $pair['right'];
+                                            $isCorrectMatch = $studentRightIndex !== null && $studentRightIndex == $pairIndex;
+                                        @endphp
+
+                                        <div class="p-4 rounded-lg border-2 {{ $isCorrectMatch ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300' }}">
+                                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
+                                                <!-- Left Item (Question) -->
+                                                <div class="flex items-center">
+                                                    <span class="font-bold text-indigo-600 mr-2">{{ $pairIndex + 1 }}.</span>
+                                                    <span class="text-gray-900 font-medium">{{ $pair['left'] }}</span>
+                                                </div>
+
+                                                <!-- Arrow and Student Answer -->
+                                                <div class="flex items-center justify-center space-x-2">
+                                                    <i class="fas fa-arrow-right text-gray-400"></i>
+                                                    @if($studentRightText)
+                                                        <div class="px-3 py-1 {{ $isCorrectMatch ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800' }} rounded-lg text-sm font-medium">
+                                                            {{ $studentRightText }}
+                                                            @if($isCorrectMatch)
+                                                                <i class="fas fa-check-circle ml-1"></i>
+                                                            @else
+                                                                <i class="fas fa-times-circle ml-1"></i>
+                                                            @endif
+                                                        </div>
+                                                    @else
+                                                        <span class="text-gray-400 italic text-sm">Not answered</span>
+                                                    @endif
+                                                </div>
+
+                                                <!-- Correct Answer -->
+                                                <div class="flex items-center justify-end">
+                                                    @if(!$isCorrectMatch)
+                                                        <div class="text-sm">
+                                                            <span class="text-gray-600">Correct: </span>
+                                                            <span class="px-2 py-1 bg-green-100 text-green-700 rounded font-medium">
+                                                                {{ $correctRightText }}
+                                                            </span>
+                                                        </div>
+                                                    @else
+                                                        <span class="text-green-600 font-semibold text-sm">
+                                                            <i class="fas fa-check-circle mr-1"></i>Correct!
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
                                 </div>
 
                             @elseif(in_array($item->type, ['fillblank', 'fill_blank', 'shortanswer', 'essay']))
