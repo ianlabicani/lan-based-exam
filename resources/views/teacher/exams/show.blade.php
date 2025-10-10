@@ -183,88 +183,226 @@
                     @endif">
                     {{ ucfirst($exam->status) }}
                 </span>
-                <p class="text-sm text-gray-500">{{ $exam->getLifecycleLabel() }}</p>
             </div>
         </div>
 
-        <!-- Lifecycle Stages Info -->
-        <div class="mb-6">
-            <h4 class="text-sm font-semibold text-gray-700 mb-3">Exam Lifecycle:</h4>
-            <div class="space-y-2">
-                @php
-                    $stages = ['draft', 'ready', 'published', 'ongoing', 'closed', 'graded', 'archived'];
-                    $currentIndex = array_search($exam->status, $stages);
-                @endphp
+        @php
+            // Parse TOS to get allocations
+            $tosData = is_string($exam->tos) ? json_decode($exam->tos, true) : $exam->tos;
+            $requiredAllocations = [
+                'easy' => 0,
+                'moderate' => 0,
+                'difficult' => 0
+            ];
 
-                @foreach($stages as $index => $stage)
-                    <div class="flex items-center space-x-3">
-                        @if($index < $currentIndex)
-                            <i class="fas fa-check-circle text-green-500"></i>
-                        @elseif($index === $currentIndex)
-                            <i class="fas fa-dot-circle text-indigo-500"></i>
+            if ($tosData && is_array($tosData)) {
+                foreach ($tosData as $topic) {
+                    if (isset($topic['distribution'])) {
+                        $requiredAllocations['easy'] += $topic['distribution']['easy']['allocation'] ?? 0;
+                        $requiredAllocations['moderate'] += $topic['distribution']['moderate']['allocation'] ?? 0;
+                        $requiredAllocations['difficult'] += $topic['distribution']['difficult']['allocation'] ?? 0;
+                    }
+                }
+            }
+
+            // Count current items by level
+            $currentCounts = [
+                'easy' => $exam->items->where('level', 'easy')->count(),
+                'moderate' => $exam->items->where('level', 'moderate')->count(),
+                'difficult' => $exam->items->where('level', 'difficult')->count()
+            ];
+
+            // Check if requirements are met
+            $requirementsMet =
+                $currentCounts['easy'] >= $requiredAllocations['easy'] &&
+                $currentCounts['moderate'] >= $requiredAllocations['moderate'] &&
+                $currentCounts['difficult'] >= $requiredAllocations['difficult'] &&
+                $exam->items->count() > 0;
+
+            // Define lifecycle
+            $lifecycle = ['draft', 'ready', 'published', 'ongoing', 'closed', 'graded', 'archived'];
+            $currentIndex = array_search($exam->status, $lifecycle);
+            $canGoBack = $currentIndex > 0;
+            $canGoForward = $currentIndex < count($lifecycle) - 1;
+            $previousStatus = $canGoBack ? $lifecycle[$currentIndex - 1] : null;
+            $nextStatus = $canGoForward ? $lifecycle[$currentIndex + 1] : null;
+        @endphp
+
+        <!-- Requirements Check (only show if trying to move forward) -->
+        @if(!$requirementsMet && ($exam->status === 'draft' || $exam->status === 'ready'))
+        <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-400 rounded">
+            <div class="flex">
+                <i class="fas fa-exclamation-circle text-red-400 mt-1"></i>
+                <div class="ml-3">
+                    <h4 class="text-sm font-semibold text-red-800 mb-2">Requirements Not Met</h4>
+                    <p class="text-sm text-red-700 mb-3">
+                        The exam does not meet the Table of Specifications requirements. Please add the required questions before proceeding.
+                    </p>
+                    <div class="space-y-2 text-sm">
+                        @if($currentCounts['easy'] < $requiredAllocations['easy'])
+                            <div class="flex items-center text-red-700">
+                                <i class="fas fa-times-circle mr-2"></i>
+                                <span>Easy: {{ $currentCounts['easy'] }}/{{ $requiredAllocations['easy'] }} questions
+                                    <span class="font-semibold">({{ $requiredAllocations['easy'] - $currentCounts['easy'] }} more needed)</span>
+                                </span>
+                            </div>
                         @else
-                            <i class="far fa-circle text-gray-300"></i>
+                            <div class="flex items-center text-green-700">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                <span>Easy: {{ $currentCounts['easy'] }}/{{ $requiredAllocations['easy'] }} questions ✓</span>
+                            </div>
                         @endif
-                        <span class="text-sm {{ $index === $currentIndex ? 'font-semibold text-indigo-600' : 'text-gray-600' }}">
-                            {{ ucfirst($stage) }}
-                        </span>
+
+                        @if($currentCounts['moderate'] < $requiredAllocations['moderate'])
+                            <div class="flex items-center text-red-700">
+                                <i class="fas fa-times-circle mr-2"></i>
+                                <span>Moderate: {{ $currentCounts['moderate'] }}/{{ $requiredAllocations['moderate'] }} questions
+                                    <span class="font-semibold">({{ $requiredAllocations['moderate'] - $currentCounts['moderate'] }} more needed)</span>
+                                </span>
+                            </div>
+                        @else
+                            <div class="flex items-center text-green-700">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                <span>Moderate: {{ $currentCounts['moderate'] }}/{{ $requiredAllocations['moderate'] }} questions ✓</span>
+                            </div>
+                        @endif
+
+                        @if($currentCounts['difficult'] < $requiredAllocations['difficult'])
+                            <div class="flex items-center text-red-700">
+                                <i class="fas fa-times-circle mr-2"></i>
+                                <span>Difficult: {{ $currentCounts['difficult'] }}/{{ $requiredAllocations['difficult'] }} questions
+                                    <span class="font-semibold">({{ $requiredAllocations['difficult'] - $currentCounts['difficult'] }} more needed)</span>
+                                </span>
+                            </div>
+                        @else
+                            <div class="flex items-center text-green-700">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                <span>Difficult: {{ $currentCounts['difficult'] }}/{{ $requiredAllocations['difficult'] }} questions ✓</span>
+                            </div>
+                        @endif
                     </div>
-                @endforeach
+                </div>
             </div>
         </div>
+        @elseif($requirementsMet && ($exam->status === 'draft' || $exam->status === 'ready'))
+        <div class="mb-6 p-4 bg-green-50 border-l-4 border-green-400 rounded">
+            <div class="flex">
+                <i class="fas fa-check-circle text-green-400 mt-1"></i>
+                <div class="ml-3">
+                    <h4 class="text-sm font-semibold text-green-800 mb-2">All Requirements Met ✓</h4>
+                    <p class="text-sm text-green-700 mb-3">
+                        The exam meets all Table of Specifications requirements.
+                    </p>
+                    <div class="space-y-2 text-sm text-green-700">
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            <span>Easy: {{ $currentCounts['easy'] }}/{{ $requiredAllocations['easy'] }} questions ✓</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            <span>Moderate: {{ $currentCounts['moderate'] }}/{{ $requiredAllocations['moderate'] }} questions ✓</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            <span>Difficult: {{ $currentCounts['difficult'] }}/{{ $requiredAllocations['difficult'] }} questions ✓</span>
+                        </div>
+                        <div class="flex items-center font-semibold">
+                            <i class="fas fa-check-double mr-2"></i>
+                            <span>Total: {{ $exam->items->count() }} questions</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
 
         <!-- Status Update Form -->
-        <form action="{{ route('teacher.exams.updateStatus', $exam->id) }}" method="POST">
+        <form action="{{ route('teacher.exams.updateStatus', $exam->id) }}" method="POST" id="statusUpdateForm">
             @csrf
             @method('PATCH')
 
             <div class="mb-6">
-                <label for="status" class="block text-sm font-medium text-gray-700 mb-2">
-                    Select New Status:
+                <label for="status" class="block text-sm font-medium text-gray-700 mb-3">
+                    Select Status Transition:
                 </label>
-                <select name="status" id="status" required
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                    <option value="">-- Choose Status --</option>
-                    @if($exam->status === 'draft')
-                        <option value="ready">Ready for Review</option>
-                    @elseif($exam->status === 'ready')
-                        <option value="draft">Back to Draft</option>
-                        <option value="published">Publish Exam</option>
-                    @elseif($exam->status === 'published')
-                        <option value="ready">Back to Ready</option>
-                        <option value="ongoing">Start Exam (Make Ongoing)</option>
-                    @elseif($exam->status === 'ongoing')
-                        <option value="closed">Close Exam</option>
-                    @elseif($exam->status === 'closed')
-                        <option value="graded">Mark as Graded</option>
-                    @elseif($exam->status === 'graded')
-                        <option value="archived">Archive Exam</option>
+
+                <div class="space-y-3">
+                    @if($canGoBack)
+                    <label class="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-indigo-300 hover:bg-indigo-50 transition duration-200">
+                        <input type="radio" name="status" value="{{ $previousStatus }}" class="w-5 h-5 text-indigo-600">
+                        <div class="ml-3 flex-1">
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-arrow-left text-gray-600"></i>
+                                <span class="font-semibold text-gray-900">Go Back to {{ ucfirst($previousStatus) }}</span>
+                            </div>
+                            <p class="text-sm text-gray-600 mt-1">Return to the previous stage</p>
+                        </div>
+                    </label>
                     @endif
-                </select>
+
+                    @if($canGoForward)
+                    <label class="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-green-300 hover:bg-green-50 transition duration-200 {{ !$requirementsMet && ($exam->status === 'draft' || $exam->status === 'ready') ? 'opacity-50 cursor-not-allowed' : '' }}">
+                        <input type="radio" name="status" value="{{ $nextStatus }}" class="w-5 h-5 text-green-600"
+                            {{ !$requirementsMet && ($exam->status === 'draft' || $exam->status === 'ready') ? 'disabled' : '' }}>
+                        <div class="ml-3 flex-1">
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-arrow-right text-green-600"></i>
+                                <span class="font-semibold text-gray-900">Proceed to {{ ucfirst($nextStatus) }}</span>
+                                @if(!$requirementsMet && ($exam->status === 'draft' || $exam->status === 'ready'))
+                                    <span class="px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded">Locked</span>
+                                @endif
+                            </div>
+                            <p class="text-sm text-gray-600 mt-1">
+                                @if($nextStatus === 'ready')
+                                    Mark as ready for review
+                                @elseif($nextStatus === 'published')
+                                    Publish exam to students
+                                @elseif($nextStatus === 'ongoing')
+                                    Start the exam period
+                                @elseif($nextStatus === 'closed')
+                                    Close exam submissions
+                                @elseif($nextStatus === 'graded')
+                                    Mark grading as complete
+                                @elseif($nextStatus === 'archived')
+                                    Archive this exam
+                                @else
+                                    Move to the next stage
+                                @endif
+                            </p>
+                        </div>
+                    </label>
+                    @endif
+
+                    @if(!$canGoBack && !$canGoForward)
+                    <div class="p-4 bg-gray-50 border-2 border-gray-200 rounded-lg text-center">
+                        <p class="text-gray-600">This exam is at the final stage of its lifecycle.</p>
+                    </div>
+                    @endif
+                </div>
             </div>
 
             <!-- Warning Message -->
+            @if($exam->status === 'draft' || $exam->status === 'ready')
             <div class="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
                 <div class="flex">
                     <i class="fas fa-exclamation-triangle text-yellow-400 mt-1"></i>
                     <div class="ml-3">
                         <p class="text-sm text-yellow-700">
-                            <strong>Note:</strong> Status changes follow the exam lifecycle and cannot be reversed beyond certain stages.
-                            @if($exam->status === 'draft' || $exam->status === 'ready')
-                                <br>Questions can only be edited in Draft or Ready status.
-                            @endif
+                            <strong>Note:</strong> Questions can only be edited in Draft or Ready status. Once published, the exam structure is locked.
                         </p>
                     </div>
                 </div>
             </div>
+            @endif
 
             <div class="flex justify-end space-x-3">
                 <button type="button" onclick="hideStatusModal()"
                     class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition duration-200">
                     Cancel
                 </button>
-                <button type="submit"
-                    class="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition duration-200">
+                <button type="submit" id="updateStatusBtn"
+                    class="px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition duration-200 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    disabled>
                     <i class="fas fa-check mr-2"></i>Update Status
                 </button>
             </div>
@@ -280,6 +418,13 @@ function showStatusModal() {
 function hideStatusModal() {
     document.getElementById('statusModal').classList.add('hidden');
 }
+
+// Enable submit button when a status is selected
+document.querySelectorAll('input[name="status"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        document.getElementById('updateStatusBtn').disabled = false;
+    });
+});
 
 // Close modal when clicking outside
 document.getElementById('statusModal')?.addEventListener('click', function(e) {

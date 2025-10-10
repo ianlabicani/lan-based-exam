@@ -30,6 +30,8 @@
             $groupedItems[$level][] = $item;
         }
     }
+
+    $isEditable = $exam->status === 'draft';
 @endphp
 
 <div class="space-y-6">
@@ -227,6 +229,7 @@
                                         @endif
                                     </div>
                                 </div>
+                                @if ($isEditable)
                                 <div class="flex items-center space-x-2 ml-4">
                                     <button onclick="editQuestion({{ $item->id }}, '{{ $item->type }}')" class="p-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition duration-200" title="Edit">
                                         <i class="fas fa-edit"></i>
@@ -235,6 +238,7 @@
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
+                                @endif
                             </div>
                         </div>
                         @endforeach
