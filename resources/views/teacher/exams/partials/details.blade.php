@@ -101,7 +101,7 @@
                         <div class="grid grid-cols-2 gap-3 text-sm">
                             <div>
                                 <span class="text-gray-500">Time Allotment:</span>
-                                <span class="font-semibold text-gray-900">{{ $topic['time_allotment'] ?? 0 }} minutes</span>
+                                <span class="font-semibold text-gray-900">{{ $topic['time_allotment'] ?? 0 }} hours</span>
                             </div>
                             <div>
                                 <span class="text-gray-500">Number of Items:</span>
@@ -117,17 +117,22 @@
                     <div class="flex items-center space-x-3">
                         @if(isset($topic['distribution']['easy']))
                         <span class="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-full">
-                            <i class="fas fa-signal mr-1"></i>Easy: {{ $topic['distribution']['easy']['allocation'] ?? 0 }}
+                            <i class="fas fa-signal mr-1"></i>Easy (30%): {{ $topic['distribution']['easy']['allocation'] ?? 0 }}
+                        </span>
+                        @endif
+                        @if(isset($topic['distribution']['average']))
+                        <span class="px-3 py-1 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full">
+                            <i class="fas fa-signal mr-1"></i>Average (50%): {{ $topic['distribution']['average']['allocation'] ?? 0 }}
                         </span>
                         @endif
                         @if(isset($topic['distribution']['moderate']))
                         <span class="px-3 py-1 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full">
-                            <i class="fas fa-signal mr-1"></i>Moderate: {{ $topic['distribution']['moderate']['allocation'] ?? 0 }}
+                            <i class="fas fa-signal mr-1"></i>Average (50%): {{ $topic['distribution']['moderate']['allocation'] ?? 0 }}
                         </span>
                         @endif
                         @if(isset($topic['distribution']['difficult']))
                         <span class="px-3 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
-                            <i class="fas fa-signal mr-1"></i>Difficult: {{ $topic['distribution']['difficult']['allocation'] ?? 0 }}
+                            <i class="fas fa-signal mr-1"></i>Difficult (20%): {{ $topic['distribution']['difficult']['allocation'] ?? 0 }}
                         </span>
                         @endif
                     </div>

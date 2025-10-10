@@ -11,7 +11,8 @@
         foreach ($tosData as $topic) {
             if (isset($topic['distribution'])) {
                 $allocations['easy'] += $topic['distribution']['easy']['allocation'] ?? 0;
-                $allocations['moderate'] += $topic['distribution']['moderate']['allocation'] ?? 0;
+                // Check both 'average' (new) and 'moderate' (old) for backward compatibility
+                $allocations['moderate'] += $topic['distribution']['average']['allocation'] ?? $topic['distribution']['moderate']['allocation'] ?? 0;
                 $allocations['difficult'] += $topic['distribution']['difficult']['allocation'] ?? 0;
             }
         }
@@ -55,7 +56,7 @@
                 'buttonColor' => 'bg-emerald-600 hover:bg-emerald-700'
             ],
             'moderate' => [
-                'label' => 'Moderate Questions',
+                'label' => 'Average Questions',
                 'icon' => 'fa-signal',
                 'bgColor' => 'bg-amber-50',
                 'borderColor' => 'border-amber-200',
