@@ -91,6 +91,233 @@
         </div>
         @endif
 
+        <!-- Analytics Section -->
+        @if(isset($analytics) && $analytics['total_submitted'] > 0)
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Overall Statistics Card -->
+            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border-2 border-blue-200">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
+                        <i class="fas fa-chart-line text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900">Overall Statistics</h3>
+                        <p class="text-sm text-gray-600">Performance overview</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-white rounded-lg p-4 border border-blue-100">
+                        <p class="text-xs text-gray-600 mb-1">Average Score</p>
+                        <p class="text-2xl font-bold text-blue-600">{{ $analytics['average_percentage'] }}%</p>
+                        <p class="text-xs text-gray-500 mt-1">{{ number_format($analytics['average_score'], 1) }} / {{ number_format($exam->total_points, 1) }}</p>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 border border-blue-100">
+                        <p class="text-xs text-gray-600 mb-1">Pass Rate</p>
+                        <p class="text-2xl font-bold text-green-600">{{ $analytics['pass_percentage'] }}%</p>
+                        <p class="text-xs text-gray-500 mt-1">{{ $analytics['pass_rate'] }} / {{ $analytics['total_submitted'] }} passed</p>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 border border-blue-100">
+                        <p class="text-xs text-gray-600 mb-1">Highest Score</p>
+                        <p class="text-2xl font-bold text-indigo-600">{{ number_format($analytics['highest_score'], 1) }}</p>
+                    </div>
+
+                    <div class="bg-white rounded-lg p-4 border border-blue-100">
+                        <p class="text-xs text-gray-600 mb-1">Lowest Score</p>
+                        <p class="text-2xl font-bold text-orange-600">{{ number_format($analytics['lowest_score'], 1) }}</p>
+                    </div>
+                </div>
+
+                <!-- Score Distribution -->
+                <div class="mt-4 bg-white rounded-lg p-4 border border-blue-100">
+                    <p class="text-sm font-semibold text-gray-700 mb-3">Score Distribution</p>
+                    <div class="space-y-2">
+                        @foreach($analytics['score_distribution'] as $range => $count)
+                            @php
+                                $percentage = $analytics['total_submitted'] > 0
+                                    ? round(($count / $analytics['total_submitted']) * 100)
+                                    : 0;
+                                $colorClass = match($range) {
+                                    '90-100' => 'bg-green-500',
+                                    '80-89' => 'bg-blue-500',
+                                    '70-79' => 'bg-yellow-500',
+                                    '60-69' => 'bg-orange-500',
+                                    default => 'bg-red-500',
+                                };
+                            @endphp
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-medium text-gray-600 w-20">{{ $range }}%</span>
+                                <div class="flex-1 bg-gray-200 rounded-full h-6 overflow-hidden">
+                                    <div class="{{ $colorClass }} h-full flex items-center justify-end pr-2 transition-all duration-300"
+                                         style="width: {{ $percentage }}%">
+                                        @if($count > 0)
+                                            <span class="text-xs font-semibold text-white">{{ $count }}</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <span class="text-xs text-gray-500 w-12 text-right">{{ $percentage }}%</span>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Performers Card -->
+            <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border-2 border-green-200">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
+                        <i class="fas fa-trophy text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900">Top Performers</h3>
+                        <p class="text-sm text-gray-600">Highest scoring students</p>
+                    </div>
+                </div>
+
+                @if($analytics['top_performers']->count() > 0)
+                    <div class="space-y-3">
+                        @foreach($analytics['top_performers'] as $index => $performer)
+                            <div class="bg-white rounded-lg p-4 border border-green-100 hover:shadow-md transition-shadow">
+                                <div class="flex items-center gap-3">
+                                    <div class="flex-shrink-0">
+                                        @if($index === 0)
+                                            <div class="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-crown text-white"></i>
+                                            </div>
+                                        @elseif($index === 1)
+                                            <div class="w-10 h-10 bg-gradient-to-br from-gray-300 to-gray-500 rounded-full flex items-center justify-center">
+                                                <span class="text-white font-bold">2</span>
+                                            </div>
+                                        @elseif($index === 2)
+                                            <div class="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center">
+                                                <span class="text-white font-bold">3</span>
+                                            </div>
+                                        @else
+                                            <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                                                <span class="text-gray-600 font-bold">{{ $index + 1 }}</span>
+                                            </div>
+                                        @endif
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="font-semibold text-gray-900 truncate">{{ $performer['name'] }}</p>
+                                        <p class="text-xs text-gray-500">{{ $performer['submitted_at']->diffForHumans() }}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-lg font-bold text-green-600">{{ $performer['percentage'] }}%</p>
+                                        <p class="text-xs text-gray-500">{{ number_format($performer['score'], 1) }} pts</p>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-gray-500 text-center py-8 italic">No submissions yet</p>
+                @endif
+            </div>
+        </div>
+
+        <!-- Question Analytics -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Most Difficult Questions -->
+            <div class="bg-white rounded-xl border-2 border-red-200 p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-exclamation-triangle text-red-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-gray-900">Most Difficult</h4>
+                        <p class="text-xs text-gray-600">Lowest success rate</p>
+                    </div>
+                </div>
+
+                @if($analytics['most_difficult']->count() > 0)
+                    <div class="space-y-2">
+                        @foreach($analytics['most_difficult'] as $question)
+                            <div class="bg-red-50 rounded-lg p-3 border border-red-100" title="{{ $question['full_question'] }}">
+                                <p class="text-sm text-gray-800 mb-2 line-clamp-2">{{ $question['question'] }}</p>
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="px-2 py-1 bg-white rounded text-gray-600">
+                                        <i class="fas fa-{{ $question['type'] === 'mcq' ? 'list' : ($question['type'] === 'essay' ? 'file-alt' : 'align-left') }} mr-1"></i>
+                                        {{ ucfirst($question['type']) }}
+                                    </span>
+                                    <span class="font-bold text-red-600">{{ $question['success_rate'] }}% correct</span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-gray-400 text-sm italic text-center py-4">Not enough data</p>
+                @endif
+            </div>
+
+            <!-- Most Unanswered Questions -->
+            <div class="bg-white rounded-xl border-2 border-orange-200 p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-question-circle text-orange-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-gray-900">Most Skipped</h4>
+                        <p class="text-xs text-gray-600">Most unanswered</p>
+                    </div>
+                </div>
+
+                @if($analytics['most_unanswered']->count() > 0 && $analytics['most_unanswered']->first()['unanswered_count'] > 0)
+                    <div class="space-y-2">
+                        @foreach($analytics['most_unanswered']->take(5) as $question)
+                            @if($question['unanswered_count'] > 0)
+                                <div class="bg-orange-50 rounded-lg p-3 border border-orange-100" title="{{ $question['full_question'] }}">
+                                    <p class="text-sm text-gray-800 mb-2 line-clamp-2">{{ $question['question'] }}</p>
+                                    <div class="flex items-center justify-between text-xs">
+                                        <span class="px-2 py-1 bg-white rounded text-gray-600">
+                                            {{ $question['points'] }} pts
+                                        </span>
+                                        <span class="font-bold text-orange-600">{{ $question['unanswered_count'] }} skipped</span>
+                                    </div>
+                                </div>
+                            @endif
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-gray-400 text-sm italic text-center py-4">All questions answered!</p>
+                @endif
+            </div>
+
+            <!-- Easiest Questions -->
+            <div class="bg-white rounded-xl border-2 border-green-200 p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-check-circle text-green-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-gray-900">Easiest Questions</h4>
+                        <p class="text-xs text-gray-600">Highest success rate</p>
+                    </div>
+                </div>
+
+                @if($analytics['easiest_questions']->count() > 0)
+                    <div class="space-y-2">
+                        @foreach($analytics['easiest_questions'] as $question)
+                            <div class="bg-green-50 rounded-lg p-3 border border-green-100" title="{{ $question['full_question'] }}">
+                                <p class="text-sm text-gray-800 mb-2 line-clamp-2">{{ $question['question'] }}</p>
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="px-2 py-1 bg-white rounded text-gray-600">
+                                        Level: {{ ucfirst($question['level']) }}
+                                    </span>
+                                    <span class="font-bold text-green-600">{{ $question['success_rate'] }}% correct</span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-gray-400 text-sm italic text-center py-4">Not enough data</p>
+                @endif
+            </div>
+        </div>
+        @endif
+
         <!-- Search and Filter Bar -->
         <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
             <div class="flex-1 max-w-md">
