@@ -20,8 +20,8 @@ class TakenExamController extends Controller
     {
         $user = Auth::user();
 
-        // Get all taken exams for this student
-        $takenExams = TakenExam::with(['exam.items'])
+        // OPTIMIZED: Select only necessary columns and use withCount for aggregates
+        $takenExams = TakenExam::with(['exam:id,title,total_points,status,starts_at,ends_at'])
             ->where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get()

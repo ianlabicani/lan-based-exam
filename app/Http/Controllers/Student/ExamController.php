@@ -19,7 +19,7 @@ class ExamController extends Controller
     {
         $user = Auth::user();
 
-        // Get published exams for student's year and section
+        // OPTIMIZED: Get published exams with eager loading
         $exams = Exam::where('status', 'ongoing')
             ->where(function ($query) use ($user) {
                 // Check if student's year is in the year array
@@ -31,14 +31,18 @@ class ExamController extends Controller
                 $query->whereJsonContains('sections', $user->section)
                     ->orWhereRaw('JSON_CONTAINS(sections, ?)', [json_encode($user->section)]);
             })
-            ->with('items')
+            ->withCount('items') // Use withCount instead of loading all items
+            ->with([
+                'takenExams' => function ($query) use ($user) {
+                    // Only load this user's taken exam
+                    $query->where('user_id', $user->id);
+                }
+            ])
             ->orderBy('starts_at', 'desc')
             ->get()
             ->map(function ($exam) use ($user) {
                 // Check if student has already taken this exam
-                $takenExam = TakenExam::where('exam_id', $exam->id)
-                    ->where('user_id', $user->id)
-                    ->first();
+                $takenExam = $exam->takenExams->first();
 
                 $exam->taken = $takenExam !== null;
                 $exam->taken_exam = $takenExam;

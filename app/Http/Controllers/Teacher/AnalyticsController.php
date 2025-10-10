@@ -39,22 +39,15 @@ class AnalyticsController extends Controller
         $ongoingExams = $exams->where('status', 'ongoing')->count();
         $closedExams = $exams->where('status', 'closed')->count();
 
-        // Student Statistics
-        $totalTakenExams = TakenExam::whereHas('exam.teachers', function ($query) use ($user) {
+        // Student Statistics - OPTIMIZED: Use single query with distinct count
+        $takenExamsBaseQuery = TakenExam::whereHas('exam.teachers', function ($query) use ($user) {
             $query->where('teacher_id', $user->id);
-        })->count();
+        });
 
-        $totalSubmissions = TakenExam::whereHas('exam.teachers', function ($query) use ($user) {
-            $query->where('teacher_id', $user->id);
-        })->whereNotNull('submitted_at')->count();
-
-        $totalStudents = TakenExam::whereHas('exam.teachers', function ($query) use ($user) {
-            $query->where('teacher_id', $user->id);
-        })->distinct('user_id')->count('user_id');
-
-        $pendingGradingCount = TakenExam::whereHas('exam.teachers', function ($query) use ($user) {
-            $query->where('teacher_id', $user->id);
-        })->where('status', 'submitted')->count();
+        $totalTakenExams = $takenExamsBaseQuery->count();
+        $totalSubmissions = (clone $takenExamsBaseQuery)->whereNotNull('submitted_at')->count();
+        $totalStudents = (clone $takenExamsBaseQuery)->distinct('user_id')->count('user_id');
+        $pendingGradingCount = (clone $takenExamsBaseQuery)->where('status', 'submitted')->count();
 
         // Performance Over Time (last 6 exams)
         $recentExamPerformance = $exams->take(6)->map(function ($exam) {
@@ -163,13 +156,20 @@ class AnalyticsController extends Controller
     {
         $user = Auth::user();
 
-        $exam = Exam::with(['items', 'takenExams.user', 'takenExams.answers.item'])
+        // OPTIMIZED: Eager load all necessary relationships upfront
+        $exam = Exam::with([
+                'items',
+                'takenExams' => function ($query) {
+                    $query->whereNotNull('submitted_at')
+                        ->with(['user:id,name,email', 'answers:id,taken_exam_id,exam_item_id,points_earned']);
+                }
+            ])
             ->whereHas('teachers', function ($query) use ($user) {
                 $query->where('teacher_id', $user->id);
             })
             ->findOrFail($id);
 
-        $takenExams = $exam->takenExams->where('submitted_at', '!=', null);
+        $takenExams = $exam->takenExams;
 
         // Calculate statistics
         $totalSubmissions = $takenExams->count();

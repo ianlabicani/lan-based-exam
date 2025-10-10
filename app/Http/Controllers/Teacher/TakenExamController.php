@@ -15,18 +15,21 @@ class TakenExamController extends Controller
      */
     public function index($examId)
     {
-        // Verify the exam belongs to the authenticated teacher
-        $exam = Exam::whereHas('teachers', function ($query) {
-            $query->where('teacher_id', Auth::id());
-        })->findOrFail($examId);
+        // Verify the exam belongs to the authenticated teacher and eager load items
+        $exam = Exam::with('items')
+            ->whereHas('teachers', function ($query) {
+                $query->where('teacher_id', Auth::id());
+            })->findOrFail($examId);
 
-        $takenExams = TakenExam::with(['user', 'answers.item', 'exam.items'])
+        // OPTIMIZED: Eager load all relationships upfront
+        $takenExams = TakenExam::with(['user', 'answers.item'])
             ->where('exam_id', $exam->id)
             ->orderBy('submitted_at', 'desc')
             ->get()
-            ->map(function ($takenExam) {
-                // Compare answers for each takenExam
-                $takenExam->answer_comparison = $this->compareAnswers($takenExam->exam->items, $takenExam->answers);
+            ->map(function ($takenExam) use ($exam) {
+                // Compare answers - use already loaded exam.items
+                $takenExam->answer_comparison = $this->compareAnswers($exam->items, $takenExam->answers);
+
                 return $takenExam;
             });
 
@@ -38,17 +41,19 @@ class TakenExamController extends Controller
      */
     public function show($examId, $takenExamId)
     {
-        // Verify the exam belongs to the authenticated teacher
-        $exam = Exam::whereHas('teachers', function ($query) {
-            $query->where('teacher_id', Auth::id());
-        })->findOrFail($examId);
+        // OPTIMIZED: Verify exam and eager load items in single query
+        $exam = Exam::with('items')
+            ->whereHas('teachers', function ($query) {
+                $query->where('teacher_id', Auth::id());
+            })->findOrFail($examId);
 
-        $takenExam = TakenExam::with(['user', 'answers.item', 'exam.items'])
+        // OPTIMIZED: Eager load only necessary relationships
+        $takenExam = TakenExam::with(['user', 'answers.item'])
             ->where('exam_id', $exam->id)
             ->findOrFail($takenExamId);
 
-        // Compare exam items with student answers
-        $comparison = $this->compareAnswers($takenExam->exam->items, $takenExam->answers);
+        // Compare exam items with student answers - use already loaded exam.items
+        $comparison = $this->compareAnswers($exam->items, $takenExam->answers);
 
         return view('teacher.taken-exams.show', compact('exam', 'takenExam', 'comparison'));
     }
@@ -102,9 +107,10 @@ class TakenExamController extends Controller
                 $options = collect($item->options ?? []);
                 $correctIndex = $options->search(function ($opt) {
                     return is_array($opt)
-                        ? (!empty($opt['correct']))
-                        : (!empty($opt->correct));
+                        ? (! empty($opt['correct']))
+                        : (! empty($opt->correct));
                 });
+
                 return $correctIndex !== false ? $correctIndex : null;
 
             case 'truefalse':
@@ -144,6 +150,7 @@ class TakenExamController extends Controller
             case 'truefalse':
                 $expected = strtolower(trim((string) $correctAnswer));
                 $student = strtolower(trim((string) $studentAnswer));
+
                 return $expected === $student;
 
             case 'matching':
@@ -177,7 +184,7 @@ class TakenExamController extends Controller
         $answer = $takenExam->answers()->findOrFail($answerId);
 
         $validated = $request->validate([
-            'points_earned' => 'required|integer|min:0|max:' . $answer->item->points,
+            'points_earned' => 'required|integer|min:0|max:'.$answer->item->points,
         ]);
 
         $answer->update($validated);

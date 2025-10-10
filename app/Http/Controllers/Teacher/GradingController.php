@@ -228,8 +228,19 @@ class GradingController extends Controller
     {
         $user = Auth::user();
 
-        // Get all submitted exams for exams where the teacher is assigned
-        $pendingGrading = TakenExam::with(['exam', 'user', 'answers.item'])
+        // OPTIMIZED: Eager load relationships and use more efficient filtering
+        $pendingGrading = TakenExam::with([
+                'exam:id,title,total_points,status', // Select only needed columns
+                'user:id,name,email,year,section',
+                'answers' => function ($query) {
+                    // Only load answers that need grading
+                    $query->whereNull('points_earned')
+                        ->whereHas('item', function ($q) {
+                            $q->whereIn('type', ['essay', 'shortanswer']);
+                        })
+                        ->with('item:id,exam_id,type,question,points');
+                }
+            ])
             ->whereHas('exam.teachers', function ($query) use ($user) {
                 $query->where('teacher_id', $user->id);
             })
