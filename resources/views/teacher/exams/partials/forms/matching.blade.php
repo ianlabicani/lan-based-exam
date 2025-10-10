@@ -49,21 +49,36 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">
                         <i class="fas fa-link text-indigo-600 mr-2"></i>Matching Pairs *
                     </label>
+                    <p class="text-xs text-gray-500 mb-3">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Create pairs where students will match items from the left column with the correct items from the right column.
+                        The right column items will be shuffled for students.
+                    </p>
+                    <div class="grid grid-cols-2 gap-4 mb-2">
+                        <div class="text-sm font-semibold text-indigo-700">
+                            <i class="fas fa-arrow-left mr-1"></i>Left Side (Questions/Terms)
+                        </div>
+                        <div class="text-sm font-semibold text-emerald-700">
+                            <i class="fas fa-arrow-right mr-1"></i>Right Side (Answers/Matches)
+                        </div>
+                    </div>
                     <div id="matchingPairsContainer" class="space-y-3">
                         <div class="flex items-center space-x-3">
-                            <input type="text" name="pairs[0][left]" placeholder="Item 1" required
-                                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                            <input type="text" name="pairs[0][right]" placeholder="Match 1" required
-                                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            <input type="text" name="pairs[0][left]" placeholder="e.g., Apple" required
+                                class="flex-1 px-4 py-2 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-indigo-50">
+                            <i class="fas fa-arrows-alt-h text-gray-400"></i>
+                            <input type="text" name="pairs[0][right]" placeholder="e.g., Fruit" required
+                                class="flex-1 px-4 py-2 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-emerald-50">
                         </div>
                         <div class="flex items-center space-x-3">
-                            <input type="text" name="pairs[1][left]" placeholder="Item 2" required
-                                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                            <input type="text" name="pairs[1][right]" placeholder="Match 2" required
-                                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            <input type="text" name="pairs[1][left]" placeholder="e.g., Carrot" required
+                                class="flex-1 px-4 py-2 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-indigo-50">
+                            <i class="fas fa-arrows-alt-h text-gray-400"></i>
+                            <input type="text" name="pairs[1][right]" placeholder="e.g., Vegetable" required
+                                class="flex-1 px-4 py-2 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-emerald-50">
                         </div>
                     </div>
                     <button type="button" onclick="addMatchingPair()"
@@ -94,10 +109,11 @@ function addMatchingPair() {
     const pairDiv = document.createElement('div');
     pairDiv.className = 'flex items-center space-x-3';
     pairDiv.innerHTML = `
-        <input type="text" name="pairs[${matchingPairIndex}][left]" placeholder="Item ${matchingPairIndex + 1}" required
-            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-        <input type="text" name="pairs[${matchingPairIndex}][right]" placeholder="Match ${matchingPairIndex + 1}" required
-            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+        <input type="text" name="pairs[${matchingPairIndex}][left]" placeholder="Left item ${matchingPairIndex + 1}" required
+            class="flex-1 px-4 py-2 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-indigo-50">
+        <i class="fas fa-arrows-alt-h text-gray-400"></i>
+        <input type="text" name="pairs[${matchingPairIndex}][right]" placeholder="Right match ${matchingPairIndex + 1}" required
+            class="flex-1 px-4 py-2 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-emerald-50">
         <button type="button" onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-700">
             <i class="fas fa-times"></i>
         </button>

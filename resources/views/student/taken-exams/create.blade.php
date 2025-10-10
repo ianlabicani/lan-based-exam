@@ -9,87 +9,12 @@
 
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        <!-- Exam Header -->
-        <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-            <div class="flex items-center justify-between flex-wrap gap-4">
-                <!-- Title & Info -->
-                <div class="flex-1">
-                    <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ $exam->title }}</h1>
-                    <p class="text-gray-600 text-sm">{{ $exam->description }}</p>
-                </div>
-
-                <!-- Timer -->
-                <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-4 rounded-lg shadow-lg">
-                    <div class="text-center">
-                        <p class="text-xs text-indigo-100 mb-1">Time Remaining</p>
-                        <div class="text-3xl font-bold font-mono" x-text="formatTime(timeRemaining)">00:00:00</div>
-                        <div class="mt-2 bg-white bg-opacity-20 rounded-full h-1">
-                            <div class="bg-white h-1 rounded-full transition-all duration-1000"
-                                 :style="`width: ${timePercentage}%`"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Progress Bar -->
-            <div class="mt-6">
-                <div class="flex items-center justify-between text-sm mb-2">
-                    <span class="text-gray-600 font-medium">Progress</span>
-                    <span class="text-gray-900 font-semibold" x-text="`${answeredCount} / ${totalQuestions} Answered`">0 / {{ $exam->items->count() }} Answered</span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-3">
-                    <div class="bg-green-500 h-3 rounded-full transition-all duration-300"
-                         :style="`width: ${progressPercentage}%`"></div>
-                </div>
-            </div>
-        </div>
+        @include('student.taken-exams.partials.exam-header')
 
         <!-- Main Content -->
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
 
-            <!-- Question Navigation Sidebar -->
-            <div class="lg:col-span-1">
-                <div class="bg-white rounded-xl shadow-md p-6 sticky top-6">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4">
-                        <i class="fas fa-list text-indigo-600 mr-2"></i>Questions
-                    </h3>
-                    <div class="grid grid-cols-5 lg:grid-cols-4 gap-2">
-                        <template x-for="(item, index) in questions" :key="item.id">
-                            <button @click="goToQuestion(index)"
-                                    :class="{
-                                        'bg-indigo-600 text-white': currentQuestionIndex === index,
-                                        'bg-green-100 text-green-700 hover:bg-green-200': currentQuestionIndex !== index && answers[item.id],
-                                        'bg-gray-100 text-gray-700 hover:bg-gray-200': currentQuestionIndex !== index && !answers[item.id]
-                                    }"
-                                    class="aspect-square rounded-lg font-semibold text-sm transition-all duration-200 flex items-center justify-center">
-                                <span x-text="index + 1"></span>
-                            </button>
-                        </template>
-                    </div>
-
-                    <!-- Legend -->
-                    <div class="mt-6 space-y-2 text-xs">
-                        <div class="flex items-center">
-                            <div class="w-6 h-6 bg-green-100 rounded mr-2"></div>
-                            <span class="text-gray-600">Answered</span>
-                        </div>
-                        <div class="flex items-center">
-                            <div class="w-6 h-6 bg-gray-100 rounded mr-2"></div>
-                            <span class="text-gray-600">Unanswered</span>
-                        </div>
-                        <div class="flex items-center">
-                            <div class="w-6 h-6 bg-indigo-600 rounded mr-2"></div>
-                            <span class="text-gray-600">Current</span>
-                        </div>
-                    </div>
-
-                    <!-- Submit Button -->
-                    <button @click="showSubmitModal = true"
-                            class="w-full mt-6 px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition duration-200">
-                        <i class="fas fa-check-circle mr-2"></i>Submit Exam
-                    </button>
-                </div>
-            </div>
+            @include('student.taken-exams.partials.navigation-sidebar')
 
             <!-- Question Display -->
             <div class="lg:col-span-3">
@@ -122,71 +47,27 @@
                             <div class="mb-8">
                                 <!-- Multiple Choice -->
                                 <template x-if="currentQuestion.type === 'mcq'">
-                                    <div class="space-y-3">
-                                        <template x-for="(option, index) in currentQuestion.options" :key="index">
-                                            <label class="flex items-start p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-all duration-200"
-                                                   :class="answers[currentQuestion.id] == index ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'">
-                                                <input type="radio"
-                                                       :name="`question-${currentQuestion.id}`"
-                                                       :value="index"
-                                                       x-model="answers[currentQuestion.id]"
-                                                       @change="saveAnswer()"
-                                                       class="mt-1 h-4 w-4 text-indigo-600">
-                                                <span class="ml-3 text-gray-900" x-text="option.text || option"></span>
-                                            </label>
-                                        </template>
-                                    </div>
+                                    @include('student.taken-exams.partials.question-mcq')
                                 </template>
 
                                 <!-- True/False -->
                                 <template x-if="currentQuestion.type === 'truefalse'">
-                                    <div class="space-y-3">
-                                        <label class="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-all duration-200"
-                                               :class="answers[currentQuestion.id] === 'true' ? 'border-green-600 bg-green-50' : 'border-gray-200'">
-                                            <input type="radio"
-                                                   :name="`question-${currentQuestion.id}`"
-                                                   value="true"
-                                                   x-model="answers[currentQuestion.id]"
-                                                   @change="saveAnswer()"
-                                                   class="h-4 w-4 text-green-600">
-                                            <span class="ml-3 text-gray-900 font-medium">True</span>
-                                        </label>
-                                        <label class="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-all duration-200"
-                                               :class="answers[currentQuestion.id] === 'false' ? 'border-red-600 bg-red-50' : 'border-gray-200'">
-                                            <input type="radio"
-                                                   :name="`question-${currentQuestion.id}`"
-                                                   value="false"
-                                                   x-model="answers[currentQuestion.id]"
-                                                   @change="saveAnswer()"
-                                                   class="h-4 w-4 text-red-600">
-                                            <span class="ml-3 text-gray-900 font-medium">False</span>
-                                        </label>
-                                    </div>
+                                    @include('student.taken-exams.partials.question-truefalse')
                                 </template>
 
                                 <!-- Fill in the Blank / Short Answer -->
                                 <template x-if="currentQuestion.type === 'fillblank' || currentQuestion.type === 'fill_blank' || currentQuestion.type === 'shortanswer'">
-                                    <div>
-                                        <input type="text"
-                                               x-model="answers[currentQuestion.id]"
-                                               @input="debouncedSave()"
-                                               placeholder="Type your answer here..."
-                                               class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                                    </div>
+                                    @include('student.taken-exams.partials.question-fillblank')
                                 </template>
 
                                 <!-- Essay -->
                                 <template x-if="currentQuestion.type === 'essay'">
-                                    <div>
-                                        <textarea x-model="answers[currentQuestion.id]"
-                                                  @input="debouncedSave()"
-                                                  rows="8"
-                                                  placeholder="Write your essay here..."
-                                                  class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"></textarea>
-                                        <p class="mt-2 text-sm text-gray-500">
-                                            <i class="fas fa-info-circle mr-1"></i>This question will be graded manually.
-                                        </p>
-                                    </div>
+                                    @include('student.taken-exams.partials.question-essay')
+                                </template>
+
+                                <!-- Matching -->
+                                <template x-if="currentQuestion.type === 'matching'">
+                                    @include('student.taken-exams.partials.question-matching')
                                 </template>
                             </div>
 
@@ -225,52 +106,7 @@
         </div>
     </div>
 
-    <!-- Submit Confirmation Modal -->
-    <div x-show="showSubmitModal"
-         x-cloak
-         @click.self="showSubmitModal = false"
-         class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100">
-        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-8"
-             @click.stop
-             x-transition:enter="transition ease-out duration-300"
-             x-transition:enter-start="opacity-0 transform scale-90"
-             x-transition:enter-end="opacity-100 transform scale-100">
-            <div class="text-center mb-6">
-                <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-yellow-100 mb-4">
-                    <i class="fas fa-exclamation-triangle text-yellow-600 text-2xl"></i>
-                </div>
-                <h3 class="text-2xl font-bold text-gray-900 mb-2">Submit Exam?</h3>
-                <p class="text-gray-600">Are you sure you want to submit your exam? This action cannot be undone.</p>
-            </div>
-
-            <div class="mb-6 p-4 bg-gray-50 rounded-lg">
-                <div class="flex items-center justify-between text-sm mb-2">
-                    <span class="text-gray-600">Answered:</span>
-                    <span class="font-semibold text-gray-900" x-text="`${answeredCount} / ${totalQuestions}`"></span>
-                </div>
-                <div class="flex items-center justify-between text-sm">
-                    <span class="text-gray-600">Unanswered:</span>
-                    <span class="font-semibold" :class="unansweredCount > 0 ? 'text-red-600' : 'text-green-600'"
-                          x-text="unansweredCount"></span>
-                </div>
-            </div>
-
-            <div class="flex space-x-3">
-                <button @click="showSubmitModal = false"
-                        class="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition duration-200">
-                    Cancel
-                </button>
-                <button @click="submitExam()"
-                        :disabled="isSubmitting"
-                        class="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <span x-text="isSubmitting ? 'Submitting...' : 'Submit'"></span>
-                </button>
-            </div>
-        </div>
-    </div>
+    @include('student.taken-exams.partials.submit-modal')
 </div>
 
 <script>
@@ -295,6 +131,7 @@ function examInterface() {
         // State
         currentQuestionIndex: 0,
         answers: {},
+        shuffledOptions: {}, // Cache for shuffled matching options
         isSaving: false,
         isSubmitting: false,
         showSubmitModal: false,
@@ -326,6 +163,34 @@ function examInterface() {
                         // For MCQ, convert answer to number if it's a string number
                         if (question.type === 'mcq' && typeof answer === 'string' && !isNaN(answer)) {
                             this.answers[numericItemId] = parseInt(answer);
+                        }
+                        // For matching, parse JSON if it's a string
+                        else if (question.type === 'matching' && typeof answer === 'string') {
+                            try {
+                                const parsedAnswer = JSON.parse(answer);
+                                console.log('Parsed matching answer for question', numericItemId, ':', parsedAnswer); // Debug
+                                console.log('Question pairs:', question.pairs); // Debug - see the full pairs structure
+                                // The saved answer format is {"0":"0","1":"1","2":"2"}
+                                // where key is the left index and value is the right index
+                                // Convert indices to text for display in dropdowns
+                                const convertedAnswer = {};
+                                for (const [leftIndex, rightIndex] of Object.entries(parsedAnswer)) {
+                                    const leftIndexNum = parseInt(leftIndex);  // Convert to number for array index
+                                    const rightIndexNum = parseInt(rightIndex);
+                                    if (question.pairs && question.pairs[rightIndexNum]) {
+                                        convertedAnswer[leftIndexNum] = question.pairs[rightIndexNum].right;
+                                        console.log(`Converting: leftIndex=${leftIndexNum} (was "${leftIndex}"), rightIndex=${rightIndex} -> rightText="${question.pairs[rightIndexNum].right}"`); // Debug
+                                    } else {
+                                        console.warn(`Pair not found at index ${rightIndexNum} for question ${numericItemId}`);
+                                    }
+                                }
+                                console.log('Converted answer for display:', convertedAnswer); // Debug
+                                console.log('Type of keys:', Object.keys(convertedAnswer).map(k => typeof k)); // Debug key types
+                                this.answers[numericItemId] = convertedAnswer;
+                            } catch (e) {
+                                console.error('Error parsing matching answer:', e); // Debug
+                                this.answers[numericItemId] = {};
+                            }
                         } else {
                             this.answers[numericItemId] = answer;
                         }
@@ -336,6 +201,13 @@ function examInterface() {
             }
 
             console.log('Loaded answers:', this.answers); // Debug log
+
+            // Initialize empty objects for matching questions that don't have saved answers
+            this.questions.forEach(question => {
+                if (question.type === 'matching' && !this.answers[question.id]) {
+                    this.answers[question.id] = {};
+                }
+            });
 
             // Start timer
             this.startTimer();
@@ -356,6 +228,14 @@ function examInterface() {
         get answeredCount() {
             return Object.keys(this.answers).filter(key => {
                 const answer = this.answers[key];
+                // For matching questions, check if all pairs are answered
+                const question = this.questions.find(q => q.id === parseInt(key));
+                if (question && question.type === 'matching') {
+                    if (typeof answer !== 'object' || answer === null) return false;
+                    const pairCount = question.pairs?.length || 0;
+                    const answeredPairs = Object.keys(answer).filter(k => answer[k] !== null && answer[k] !== '').length;
+                    return answeredPairs === pairCount;
+                }
                 return answer !== null && answer !== undefined && answer !== '';
             }).length;
         },
@@ -419,14 +299,91 @@ function examInterface() {
             }
         },
 
-        async saveAnswer() {
+        // Matching question helpers
+        getMatchingAnswer(questionId, pairIndex) {
+            if (!this.answers[questionId]) {
+                this.answers[questionId] = {};
+            }
+            return this.answers[questionId][pairIndex] || '';
+        },
+
+        updateMatchingAnswer(questionId, pairIndex, value) {
+            if (!this.answers[questionId]) {
+                this.answers[questionId] = {};
+            }
+            this.answers[questionId][pairIndex] = value;
+            console.log('Updated matching answer:', questionId, pairIndex, value, this.answers[questionId]); // Debug
+            this.saveAnswer();
+        },
+
+        populateMatchingDropdown(selectElement, questionId, pairIndex, pairs) {
+            // Get shuffled options
+            const shuffled = this.getShuffledRightOptions(pairs);
+
+            // Add options to select element
+            shuffled.forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = option;
+                opt.textContent = option;
+                selectElement.appendChild(opt);
+            });
+
+            // Set the saved value
+            const savedValue = this.answers[questionId]?.[pairIndex] || '';
+            selectElement.value = savedValue;
+
+            console.log('Dropdown populated - Q:', questionId, 'Pair:', pairIndex, 'Set value to:', savedValue, 'Actual value:', selectElement.value);
+        },
+
+        getShuffledRightOptions(pairs) {
+            // Create a unique key for this set of pairs
+            const pairsKey = JSON.stringify(pairs);
+
+            // Return cached shuffle if it exists
+            if (this.shuffledOptions[pairsKey]) {
+                console.log('Returning cached shuffle:', this.shuffledOptions[pairsKey]); // Debug
+                return this.shuffledOptions[pairsKey];
+            }
+
+            // Extract right options and shuffle them
+            const rightOptions = pairs.map(pair => pair.right);
+            console.log('Original right options:', rightOptions); // Debug
+            // Simple shuffle (Fisher-Yates)
+            const shuffled = [...rightOptions];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+
+            console.log('Shuffled options:', shuffled); // Debug
+            // Cache the result
+            this.shuffledOptions[pairsKey] = shuffled;
+            return shuffled;
+        },        async saveAnswer() {
             if (!this.currentQuestion || !this.answers[this.currentQuestion.id]) return;
 
             this.isSaving = true;
 
+            // Prepare answer based on question type
+            let answerToSave = this.answers[this.currentQuestion.id];
+
+            // For matching questions, convert text values to indices before saving
+            // Save format: {"0":"0","1":"1","2":"2"} where both key and value are indices
+            if (this.currentQuestion.type === 'matching' && typeof answerToSave === 'object') {
+                const indexBasedAnswer = {};
+                for (const [leftIndex, rightText] of Object.entries(answerToSave)) {
+                    // Find the index of the right text in pairs
+                    const rightIndex = this.currentQuestion.pairs.findIndex(pair => pair.right === rightText);
+                    if (rightIndex !== -1) {
+                        indexBasedAnswer[leftIndex] = rightIndex.toString();
+                    }
+                }
+                answerToSave = JSON.stringify(indexBasedAnswer);
+            }
+
             console.log('Saving answer:', {
                 item_id: this.currentQuestion.id,
-                answer: this.answers[this.currentQuestion.id]
+                answer: answerToSave
             }); // Debug log
 
             try {
@@ -444,7 +401,7 @@ function examInterface() {
                     },
                     body: JSON.stringify({
                         item_id: this.currentQuestion.id,
-                        answer: this.answers[this.currentQuestion.id]
+                        answer: answerToSave
                     })
                 });
 
