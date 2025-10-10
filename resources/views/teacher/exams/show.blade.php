@@ -9,23 +9,6 @@
 <div class="min-h-screen bg-gray-50 py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        <!-- Success Message -->
-        @if(session('success'))
-            <div class="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-lg shadow-md">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-check-circle text-green-500 text-xl"></i>
-                    </div>
-                    <div class="ml-3">
-                        <p class="text-green-700 font-medium">{{ session('success') }}</p>
-                    </div>
-                    <button onclick="this.parentElement.parentElement.remove()" class="ml-auto text-green-500 hover:text-green-700">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
-        @endif
-
         <!-- Page Header -->
         <div class="mb-8">
             <div class="flex items-center space-x-4 mb-4">
@@ -35,13 +18,33 @@
                 <div class="flex-1">
                     <div class="flex items-center space-x-3">
                         <h1 class="text-3xl font-bold text-gray-900">{{ $exam->title }}</h1>
-                        @if($exam->status === 'published')
+                        @if($exam->status === 'draft')
+                            <span class="px-3 py-1 bg-gray-100 text-gray-700 text-sm font-semibold rounded-full">
+                                <i class="fas fa-pencil-alt"></i> Draft
+                            </span>
+                        @elseif($exam->status === 'ready')
+                            <span class="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full">
+                                <i class="fas fa-clipboard-check"></i> Ready
+                            </span>
+                        @elseif($exam->status === 'published')
                             <span class="px-3 py-1 bg-green-100 text-green-700 text-sm font-semibold rounded-full">
                                 <i class="fas fa-check-circle"></i> Published
                             </span>
-                        @elseif($exam->status === 'draft')
+                        @elseif($exam->status === 'ongoing')
                             <span class="px-3 py-1 bg-yellow-100 text-yellow-700 text-sm font-semibold rounded-full">
-                                <i class="fas fa-pencil-alt"></i> Draft
+                                <i class="fas fa-hourglass-half"></i> Ongoing
+                            </span>
+                        @elseif($exam->status === 'closed')
+                            <span class="px-3 py-1 bg-orange-100 text-orange-700 text-sm font-semibold rounded-full">
+                                <i class="fas fa-lock"></i> Closed
+                            </span>
+                        @elseif($exam->status === 'graded')
+                            <span class="px-3 py-1 bg-purple-100 text-purple-700 text-sm font-semibold rounded-full">
+                                <i class="fas fa-star"></i> Graded
+                            </span>
+                        @elseif($exam->status === 'archived')
+                            <span class="px-3 py-1 bg-red-100 text-red-700 text-sm font-semibold rounded-full">
+                                <i class="fas fa-archive"></i> Archived
                             </span>
                         @endif
                     </div>
@@ -51,16 +54,18 @@
                     <button onclick="showStatusModal()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition duration-200">
                         <i class="fas fa-sync-alt mr-2"></i>Update Status
                     </button>
-                    <a href="{{ route('teacher.exams.edit', $exam->id) }}" class="px-4 py-2 bg-yellow-600 text-white rounded-lg font-medium hover:bg-yellow-700 transition duration-200">
-                        <i class="fas fa-edit mr-2"></i>Edit
-                    </a>
-                    <form action="{{ route('teacher.exams.destroy', $exam->id) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this exam?')">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition duration-200">
-                            <i class="fas fa-trash mr-2"></i>Delete
-                        </button>
-                    </form>
+                    @if ($exam->status == 'draft')
+                        <a href="{{ route('teacher.exams.edit', $exam->id) }}" class="px-4 py-2 bg-yellow-600 text-white rounded-lg font-medium hover:bg-yellow-700 transition duration-200">
+                            <i class="fas fa-edit mr-2"></i>Edit
+                        </a>
+                        <form action="{{ route('teacher.exams.destroy', $exam->id) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this exam?')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition duration-200">
+                                <i class="fas fa-trash mr-2"></i>Delete
+                            </button>
+                        </form>
+                    @endif
                 </div>
             </div>
         </div>

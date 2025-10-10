@@ -241,8 +241,42 @@
     });
 </script>
 
-    <main>
-        @yield('teacher-content')
+    <main class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+         <!-- Success Message -->
+        @if(session('success'))
+            <div class="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-lg shadow-md px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-check-circle text-green-500 text-xl"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-green-700 font-medium">{{ session('success') }}</p>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-auto text-green-500 hover:text-green-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg shadow-md px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-circle text-red-500 text-xl"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-red-700 font-medium">{{ session('error') }}</p>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-auto text-red-500 hover:text-red-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        @endif
+    </div>
+    @yield('teacher-content')
     </main>
 
 @endsection

@@ -146,7 +146,7 @@ class ExamController extends Controller
             'starts_at' => 'sometimes|date',
             'ends_at' => 'sometimes|date|after:starts_at',
             'year' => 'sometimes|string',
-            'sections' => 'sometimes', // string or array
+            'sections' => 'sometimes',
             'status' => 'sometimes|in:draft,ready,published,ongoing,closed,graded,archived',
             'total_points' => 'sometimes|integer|min:0',
             'tos' => 'sometimes|array',
