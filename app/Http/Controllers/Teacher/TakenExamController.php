@@ -29,11 +29,173 @@ class TakenExamController extends Controller
             ->map(function ($takenExam) use ($exam) {
                 // Compare answers - use already loaded exam.items
                 $takenExam->answer_comparison = $this->compareAnswers($exam->items, $takenExam->answers);
-
                 return $takenExam;
             });
 
-        return view('teacher.exams.takers', compact('exam', 'takenExams'));
+        // Calculate analytics
+        $analytics = $this->calculateAnalytics($exam, $takenExams);
+
+        return view('teacher.exams.takers', compact('exam', 'takenExams', 'analytics'));
+    }
+
+    /**
+     * Calculate comprehensive analytics for the exam
+     */
+    private function calculateAnalytics($exam, $takenExams)
+    {
+        $submittedExams = $takenExams->filter(function ($takenExam) {
+            return $takenExam->submitted_at !== null;
+        });
+
+        // Top Performers (Top 5)
+        $topPerformers = $submittedExams
+            ->sortByDesc('total_points')
+            ->take(5)
+            ->map(function ($takenExam) use ($exam) {
+                $percentage = $exam->total_points > 0
+                    ? round(($takenExam->total_points / $exam->total_points) * 100, 1)
+                    : 0;
+
+                return [
+                    'name' => $takenExam->user->name,
+                    'score' => $takenExam->total_points,
+                    'percentage' => $percentage,
+                    'submitted_at' => $takenExam->submitted_at,
+                ];
+            })
+            ->values();
+
+        // Question Analytics - Most Difficult Questions (lowest success rate)
+        $questionStats = $exam->items->map(function ($item) use ($submittedExams) {
+            $answers = $submittedExams->flatMap->answers->where('exam_item_id', $item->id);
+            $totalAnswered = $answers->count();
+
+            if ($totalAnswered === 0) {
+                return null;
+            }
+
+            // Count correct answers
+            $correctCount = 0;
+            foreach ($answers as $answer) {
+                if ($item->type === 'essay' || $item->type === 'shortanswer') {
+                    // For manual grading, consider full points as correct
+                    if ($answer->points_earned === $item->points) {
+                        $correctCount++;
+                    }
+                } else {
+                    // For auto-graded, check if they got full points
+                    if ($answer->points_earned === $item->points) {
+                        $correctCount++;
+                    }
+                }
+            }
+
+            $successRate = $totalAnswered > 0 ? round(($correctCount / $totalAnswered) * 100, 1) : 0;
+            $unansweredCount = $submittedExams->count() - $totalAnswered;
+
+            return [
+                'id' => $item->id,
+                'question' => strlen($item->question) > 80
+                    ? substr($item->question, 0, 77) . '...'
+                    : $item->question,
+                'full_question' => $item->question,
+                'type' => $item->type,
+                'level' => $item->level,
+                'points' => $item->points,
+                'total_answered' => $totalAnswered,
+                'correct_count' => $correctCount,
+                'unanswered_count' => $unansweredCount,
+                'success_rate' => $successRate,
+                'average_points' => $answers->avg('points_earned'),
+            ];
+        })->filter()->values();
+
+        // Most Difficult Questions (lowest success rate, at least 3 answers)
+        $mostDifficult = $questionStats
+            ->filter(function ($stat) {
+                return $stat['total_answered'] >= 3; // Only questions with at least 3 answers
+            })
+            ->sortBy('success_rate')
+            ->take(5)
+            ->values();
+
+        // Most Unanswered Questions
+        $mostUnanswered = $questionStats
+            ->sortByDesc('unanswered_count')
+            ->take(5)
+            ->values();
+
+        // Easiest Questions (highest success rate, at least 3 answers)
+        $easiest = $questionStats
+            ->filter(function ($stat) {
+                return $stat['total_answered'] >= 3;
+            })
+            ->sortByDesc('success_rate')
+            ->take(5)
+            ->values();
+
+        // Score Distribution
+        $scoreRanges = [
+            '90-100' => 0,
+            '80-89' => 0,
+            '70-79' => 0,
+            '60-69' => 0,
+            'Below 60' => 0,
+        ];
+
+        foreach ($submittedExams as $takenExam) {
+            $percentage = $exam->total_points > 0
+                ? ($takenExam->total_points / $exam->total_points) * 100
+                : 0;
+
+            if ($percentage >= 90) {
+                $scoreRanges['90-100']++;
+            } elseif ($percentage >= 80) {
+                $scoreRanges['80-89']++;
+            } elseif ($percentage >= 70) {
+                $scoreRanges['70-79']++;
+            } elseif ($percentage >= 60) {
+                $scoreRanges['60-69']++;
+            } else {
+                $scoreRanges['Below 60']++;
+            }
+        }
+
+        // Overall Statistics
+        $averageScore = $submittedExams->avg('total_points');
+        $averagePercentage = $exam->total_points > 0 && $submittedExams->count() > 0
+            ? round(($averageScore / $exam->total_points) * 100, 1)
+            : 0;
+
+        $highestScore = $submittedExams->max('total_points');
+        $lowestScore = $submittedExams->min('total_points');
+
+        $passRate = $submittedExams->filter(function ($takenExam) use ($exam) {
+            $percentage = $exam->total_points > 0
+                ? ($takenExam->total_points / $exam->total_points) * 100
+                : 0;
+            return $percentage >= 75; // Consider 75% as passing
+        })->count();
+
+        $passPercentage = $submittedExams->count() > 0
+            ? round(($passRate / $submittedExams->count()) * 100, 1)
+            : 0;
+
+        return [
+            'top_performers' => $topPerformers,
+            'most_difficult' => $mostDifficult,
+            'most_unanswered' => $mostUnanswered,
+            'easiest_questions' => $easiest,
+            'score_distribution' => $scoreRanges,
+            'average_score' => round($averageScore, 2),
+            'average_percentage' => $averagePercentage,
+            'highest_score' => $highestScore,
+            'lowest_score' => $lowestScore,
+            'pass_rate' => $passRate,
+            'pass_percentage' => $passPercentage,
+            'total_submitted' => $submittedExams->count(),
+            'question_stats' => $questionStats,
+        ];
     }
 
     /**
