@@ -4,10 +4,8 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Models\Exam;
-use App\Models\ExamItem;
 use App\Models\TakenExam;
 use App\Models\TakenExamAnswer;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -51,7 +49,7 @@ class TakenExamController extends Controller
     {
         $examId = $request->input('exam_id');
 
-        if (!$examId) {
+        if (! $examId) {
             return redirect()->route('student.exams.index')
                 ->with('error', 'Exam ID is required.');
         }
@@ -133,13 +131,25 @@ class TakenExamController extends Controller
             ->where('user_id', $user->id)
             ->findOrFail($id);
 
-        if (!$takenExam->submitted_at) {
+        if (! $takenExam->submitted_at) {
             return redirect()->route('student.taken-exams.continue', $takenExam->id)
                 ->with('info', 'Please complete and submit the exam first.');
         }
 
-        // Calculate statistics
         $exam = $takenExam->exam;
+
+        // Check if the student's submission has been graded
+        // Only show results if their submission status is 'graded'
+        if ($takenExam->status !== 'graded') {
+            return view('student.taken-exams.pending', compact('exam', 'takenExam'));
+        }
+
+        // Additionally check if exam is closed (optional double-check)
+        if ($exam->status !== 'closed') {
+            return view('student.taken-exams.pending', compact('exam', 'takenExam'));
+        }
+
+        // Calculate statistics (only shown when graded and exam is closed)
         $totalQuestions = $exam->items->count();
         $answeredQuestions = $takenExam->answers->count();
         $correctAnswers = $takenExam->answers->where('points_earned', '>', 0)->count();
@@ -306,7 +316,7 @@ class TakenExamController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Exam submission failed: ' . $e->getMessage());
+            Log::error('Exam submission failed: '.$e->getMessage());
 
             return redirect()->back()
                 ->with('error', 'Failed to submit exam. Please try again.');
@@ -359,17 +369,20 @@ class TakenExamController extends Controller
                         break;
                     }
                 }
+
                 return (int) $studentAnswer === $correctOption ? $item->points : 0;
 
             case 'truefalse':
                 $expected = strtolower(trim($item->answer));
                 $student = strtolower(trim($studentAnswer));
+
                 return $expected === $student ? $item->points : 0;
 
             case 'fillblank':
             case 'fill_blank':
                 $expected = strtolower(trim($item->expected_answer));
                 $student = strtolower(trim($studentAnswer));
+
                 return $expected === $student ? $item->points : 0;
 
             case 'shortanswer':

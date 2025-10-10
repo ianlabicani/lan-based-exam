@@ -147,11 +147,22 @@ class ExamController extends Controller
         // Calculate statistics
         $totalTakers = $takers->count();
         $completedCount = $takers->where('submitted_at', '!=', null)->count();
+        $gradedCount = $takers->where('status', 'graded')->count();
+        $pendingGradingCount = $takers->where('status', 'submitted')->count();
         $averageScore = $completedCount > 0
             ? round($takers->where('submitted_at', '!=', null)->avg('total_points'), 2)
             : 0;
 
-        return view('teacher.exams.show', compact('exam', 'examItems', 'takers', 'totalTakers', 'completedCount', 'averageScore'));
+        return view('teacher.exams.show', compact(
+            'exam',
+            'examItems',
+            'takers',
+            'totalTakers',
+            'completedCount',
+            'gradedCount',
+            'pendingGradingCount',
+            'averageScore'
+        ));
     }
 
     /**

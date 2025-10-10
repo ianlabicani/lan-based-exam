@@ -96,29 +96,58 @@
                                 <!-- Right Side: Score & Actions -->
                                 <div class="bg-gray-50 p-6 md:w-64 flex flex-col justify-between border-t md:border-t-0 md:border-l border-gray-200">
                                     @if($takenExam->is_completed)
-                                        <!-- Score Display -->
-                                        <div class="mb-4">
-                                            <p class="text-sm text-gray-600 mb-2">Your Score</p>
-                                            <div class="flex items-baseline">
-                                                <span class="text-3xl font-bold text-indigo-600">{{ $takenExam->total_points }}</span>
-                                                <span class="text-lg text-gray-500 ml-1">/{{ $takenExam->exam->total_points ?? 0 }}</span>
-                                            </div>
-                                            <div class="mt-2">
-                                                <div class="flex items-center justify-between text-sm mb-1">
-                                                    <span class="text-gray-600">Percentage</span>
-                                                    <span class="font-semibold text-gray-900">{{ $takenExam->percentage ?? 0 }}%</span>
+                                        @if($takenExam->status === 'graded' && $takenExam->exam->status === 'closed')
+                                            <!-- Score Display (only show when graded AND exam is closed) -->
+                                            <div class="mb-4">
+                                                <p class="text-sm text-gray-600 mb-2">Your Score</p>
+                                                <div class="flex items-baseline">
+                                                    <span class="text-3xl font-bold text-indigo-600">{{ $takenExam->total_points }}</span>
+                                                    <span class="text-lg text-gray-500 ml-1">/{{ $takenExam->exam->total_points ?? 0 }}</span>
                                                 </div>
-                                                <div class="w-full bg-gray-200 rounded-full h-2">
-                                                    <div class="bg-indigo-600 h-2 rounded-full" style="width: {{ $takenExam->percentage ?? 0 }}%"></div>
+                                                <div class="mt-2">
+                                                    <div class="flex items-center justify-between text-sm mb-1">
+                                                        <span class="text-gray-600">Percentage</span>
+                                                        <span class="font-semibold text-gray-900">{{ $takenExam->percentage ?? 0 }}%</span>
+                                                    </div>
+                                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                                        <div class="bg-indigo-600 h-2 rounded-full" style="width: {{ $takenExam->percentage ?? 0 }}%"></div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        <!-- View Results Button -->
-                                        <a href="{{ route('student.taken-exams.show', $takenExam->id) }}"
-                                           class="w-full px-4 py-3 bg-indigo-600 text-white text-center rounded-lg font-medium hover:bg-indigo-700 transition duration-200">
-                                            <i class="fas fa-chart-bar mr-2"></i>View Results
-                                        </a>
+                                            <!-- View Results Button -->
+                                            <a href="{{ route('student.taken-exams.show', $takenExam->id) }}"
+                                               class="w-full px-4 py-3 bg-indigo-600 text-white text-center rounded-lg font-medium hover:bg-indigo-700 transition duration-200">
+                                                <i class="fas fa-chart-bar mr-2"></i>View Results
+                                            </a>
+                                        @else
+                                            <!-- Results Pending (not graded yet or exam not closed) -->
+                                            <div class="mb-4">
+                                                <p class="text-sm text-gray-600 mb-2">Status</p>
+                                                <div class="flex items-center">
+                                                    @if($takenExam->status === 'graded')
+                                                        <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                                                        <p class="text-sm font-semibold text-green-700">Graded</p>
+                                                    @else
+                                                        <i class="fas fa-clock text-yellow-600 mr-2"></i>
+                                                        <p class="text-sm font-semibold text-yellow-700">Awaiting Grading</p>
+                                                    @endif
+                                                </div>
+                                                <p class="text-xs text-gray-500 mt-2">
+                                                    @if($takenExam->status === 'graded')
+                                                        Results will be visible when exam is closed
+                                                    @else
+                                                        Teacher is reviewing your submission
+                                                    @endif
+                                                </p>
+                                            </div>
+
+                                            <!-- View Status Button -->
+                                            <a href="{{ route('student.taken-exams.show', $takenExam->id) }}"
+                                               class="w-full px-4 py-3 bg-gray-200 text-gray-700 text-center rounded-lg font-medium hover:bg-gray-300 transition duration-200">
+                                                <i class="fas fa-info-circle mr-2"></i>View Status
+                                            </a>
+                                        @endif
                                     @else
                                         <!-- Ongoing Exam -->
                                         <div class="mb-4">

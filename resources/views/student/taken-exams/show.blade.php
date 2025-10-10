@@ -88,17 +88,10 @@
                         $answer = $takenExam->answers->firstWhere('exam_item_id', $item->id);
                         $isManualGrading = in_array($item->type, ['essay', 'shortanswer']);
 
-                        // For manual grading items, use teacher_score if available, otherwise points_earned
-                        $pointsEarned = 0;
-                        if ($answer) {
-                            if ($isManualGrading && $answer->teacher_score !== null) {
-                                $pointsEarned = $answer->teacher_score;
-                            } else {
-                                $pointsEarned = $answer->points_earned ?? 0;
-                            }
-                        }
-
+                        // Get points earned
+                        $pointsEarned = $answer ? ($answer->points_earned ?? 0) : 0;
                         $isCorrect = $pointsEarned > 0;
+                        $isPending = $isManualGrading && $answer && $answer->points_earned === null;
                     @endphp
 
                     <div class="border-2 rounded-lg p-6
@@ -133,8 +126,8 @@
                             <div class="ml-4 text-right">
                                 @if($answer)
                                     <div class="px-4 py-2 rounded-lg font-bold
-                                                {{ $isCorrect ? 'bg-green-600 text-white' : ($isManualGrading && $answer->teacher_score === null ? 'bg-yellow-400 text-white' : 'bg-red-600 text-white') }}">
-                                        @if($isManualGrading && $answer->teacher_score === null)
+                                                {{ $isCorrect ? 'bg-green-600 text-white' : ($isPending ? 'bg-yellow-400 text-white' : 'bg-red-600 text-white') }}">
+                                        @if($isPending)
                                             <span class="text-sm">Pending</span>
                                         @else
                                             <span class="text-xl">{{ $pointsEarned }}</span>
@@ -145,7 +138,7 @@
                                         <p class="text-xs text-green-700 mt-1 font-medium">
                                             <i class="fas fa-check-circle mr-1"></i>Correct
                                         </p>
-                                    @elseif($isManualGrading && $answer->teacher_score === null)
+                                    @elseif($isPending)
                                         <p class="text-xs text-gray-600 mt-1">
                                             <i class="fas fa-clock mr-1"></i>Manual Grading
                                         </p>
@@ -260,13 +253,13 @@
                                     @endif
 
                                     @if(in_array($item->type, ['essay', 'shortanswer']))
-                                        @if($answer && $answer->teacher_score !== null)
+                                        @if($answer && $answer->points_earned !== null)
                                             <!-- Teacher Graded -->
                                             <div class="bg-indigo-50 p-4 rounded-lg border-2 border-indigo-200">
                                                 <div class="flex items-center justify-between mb-2">
                                                     <p class="text-xs text-indigo-600 font-semibold uppercase">Teacher's Score:</p>
                                                     <span class="text-2xl font-bold text-indigo-700">
-                                                        {{ $answer->teacher_score }} / {{ $item->points }}
+                                                        {{ $answer->points_earned }} / {{ $item->points }}
                                                     </span>
                                                 </div>
                                                 @if($answer->feedback)
