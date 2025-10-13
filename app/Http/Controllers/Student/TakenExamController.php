@@ -293,8 +293,8 @@ class TakenExamController extends Controller
                 }
             }
 
-            // Calculate total points
-            $totalPoints = $takenExam->answers()->sum('points_earned');
+            // Calculate total points (only count non-null values, as null means manual grading pending)
+            $totalPoints = $takenExam->answers()->whereNotNull('points_earned')->sum('points_earned');
 
             // Check if there are any essay or short answer questions
             $hasManualGradingItems = $exam->items->whereIn('type', ['essay', 'shortanswer'])->count() > 0;
@@ -387,8 +387,8 @@ class TakenExamController extends Controller
 
             case 'shortanswer':
             case 'essay':
-                // Manual grading required
-                return 0;
+                // Manual grading required - return null so it can be detected as ungraded
+                return null;
 
             case 'matching':
                 // Score each correct pair individually (1 point per pair)

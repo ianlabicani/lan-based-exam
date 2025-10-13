@@ -263,8 +263,8 @@ class ExamController extends Controller
 
             case 'shortanswer':
             case 'essay':
-                // Manual grading required
-                return 0;
+                // Manual grading required - return null so it can be detected as ungraded
+                return null;
 
             case 'matching':
                 // Score each correct pair individually (1 point per pair)
