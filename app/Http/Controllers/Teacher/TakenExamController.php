@@ -316,7 +316,25 @@ class TakenExamController extends Controller
                 return $expected === $student;
 
             case 'matching':
-                return $studentAnswer === $correctAnswer;
+                // For matching, check if student answer matches expected pairs
+                // But note: actual scoring counts each pair individually
+                if (!is_string($studentAnswer)) {
+                    return false;
+                }
+
+                $studentPairs = json_decode($studentAnswer, true);
+                if (!is_array($studentPairs) || !is_array($correctAnswer)) {
+                    return false;
+                }
+
+                // Check if all pairs match
+                foreach ($studentPairs as $leftIndex => $rightIndex) {
+                    if (!isset($correctAnswer[$leftIndex]) || $correctAnswer[$leftIndex]['right'] !== $correctAnswer[$rightIndex]['right']) {
+                        return false;
+                    }
+                }
+
+                return true;
 
             case 'fillblank':
             case 'fill_blank':

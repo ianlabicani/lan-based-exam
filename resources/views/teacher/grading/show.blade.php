@@ -579,11 +579,13 @@ function gradingPanel() {
                         (parseFloat(this.scores[itemId]) || 0) : 0;
 
                     this.gradedItems[itemId] = true;
-                    this.scores[itemId] = score; // UPDATE THE SCORES OBJECT!
-                    this.modifiedItems[itemId] = false;
 
                     // Update manual score (subtract old score, add new score)
                     this.manualScore = this.manualScore - previousScore + score;
+
+                    // Update the scores object AFTER calculating the difference
+                    this.scores[itemId] = score;
+                    this.modifiedItems[itemId] = false;
 
                     // Show success modal
                     this.showModal('success', 'Score Saved', `Score of ${score} points has been saved successfully!`);

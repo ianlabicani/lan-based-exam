@@ -31,10 +31,14 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="fas fa-star text-indigo-600 mr-2"></i>Points *
+                            <i class="fas fa-star text-indigo-600 mr-2"></i>Points (Auto-calculated) *
                         </label>
-                        <input type="number" name="points" min="1" value="1" required
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        <input type="number" name="points" id="editMatchingPoints" min="1" value="1" readonly
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
+                            title="Points are automatically set to the number of pairs (1 point per pair)">
+                        <p class="text-xs text-gray-500 mt-1">
+                            <i class="fas fa-info-circle mr-1"></i>1 point per pair
+                        </p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -97,6 +101,15 @@
 <script>
 let editMatchingPairIndex = 2;
 
+function updateEditMatchingPoints() {
+    const container = document.getElementById('editMatchingPairsContainer');
+    const pairCount = container.children.length;
+    const pointsInput = document.getElementById('editMatchingPoints');
+    if (pointsInput) {
+        pointsInput.value = pairCount;
+    }
+}
+
 function addEditMatchingPair() {
     const container = document.getElementById('editMatchingPairsContainer');
     const pairDiv = document.createElement('div');
@@ -107,12 +120,24 @@ function addEditMatchingPair() {
         <i class="fas fa-arrows-alt-h text-gray-400"></i>
         <input type="text" name="pairs[${editMatchingPairIndex}][right]" placeholder="Right match ${editMatchingPairIndex + 1}" required
             class="flex-1 px-4 py-2 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-emerald-50">
-        <button type="button" onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-700">
+        <button type="button" onclick="removeEditMatchingPair(this)" class="text-red-600 hover:text-red-700">
             <i class="fas fa-times"></i>
         </button>
     `;
     container.appendChild(pairDiv);
     editMatchingPairIndex++;
+    updateEditMatchingPoints();
+}
+
+function removeEditMatchingPair(button) {
+    const container = document.getElementById('editMatchingPairsContainer');
+    // Don't allow removal if only 2 pairs remain (minimum)
+    if (container.children.length > 2) {
+        button.parentElement.remove();
+        updateEditMatchingPoints();
+    } else {
+        alert('A matching question must have at least 2 pairs.');
+    }
 }
 
 function setEditMatchingAction(examId, itemId) {
@@ -121,7 +146,6 @@ function setEditMatchingAction(examId, itemId) {
 
 function populateEditMatchingForm(item) {
     document.querySelector('#editMatchingQuestionForm textarea[name="question"]').value = item.question || '';
-    document.querySelector('#editMatchingQuestionForm input[name="points"]').value = item.points || 1;
 
     // Set both the hidden input and the disabled select
     const level = item.level || 'moderate';
@@ -145,7 +169,11 @@ function populateEditMatchingForm(item) {
             leftInput.placeholder = `Item ${index + 1}`;
             leftInput.value = pair.left || '';
             leftInput.required = true;
-            leftInput.className = 'flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500';
+            leftInput.className = 'flex-1 px-4 py-2 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-indigo-50';
+
+            // Create arrow icon
+            const arrow = document.createElement('i');
+            arrow.className = 'fas fa-arrows-alt-h text-gray-400';
 
             // Create right input
             const rightInput = document.createElement('input');
@@ -154,9 +182,10 @@ function populateEditMatchingForm(item) {
             rightInput.placeholder = `Match ${index + 1}`;
             rightInput.value = pair.right || '';
             rightInput.required = true;
-            rightInput.className = 'flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500';
+            rightInput.className = 'flex-1 px-4 py-2 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-emerald-50';
 
             pairDiv.appendChild(leftInput);
+            pairDiv.appendChild(arrow);
             pairDiv.appendChild(rightInput);
 
             // Add remove button for pairs beyond the first two
@@ -165,13 +194,16 @@ function populateEditMatchingForm(item) {
                 removeBtn.type = 'button';
                 removeBtn.className = 'text-red-600 hover:text-red-700';
                 removeBtn.innerHTML = '<i class="fas fa-times"></i>';
-                removeBtn.onclick = function() { this.parentElement.remove(); };
+                removeBtn.onclick = function() { removeEditMatchingPair(this); };
                 pairDiv.appendChild(removeBtn);
             }
 
             container.appendChild(pairDiv);
             editMatchingPairIndex++;
         });
+
+        // Update points after populating pairs
+        updateEditMatchingPoints();
     }
 }
 </script>

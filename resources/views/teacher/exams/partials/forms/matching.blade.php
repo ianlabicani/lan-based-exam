@@ -30,10 +30,14 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="fas fa-star text-indigo-600 mr-2"></i>Points *
+                            <i class="fas fa-star text-indigo-600 mr-2"></i>Points (Auto-calculated) *
                         </label>
-                        <input type="number" name="points" min="1" value="1" required
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        <input type="number" name="points" id="matchingPoints" min="1" value="2" readonly
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
+                            title="Points are automatically set to the number of pairs (1 point per pair)">
+                        <p class="text-xs text-gray-500 mt-1">
+                            <i class="fas fa-info-circle mr-1"></i>1 point per pair
+                        </p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -104,6 +108,16 @@
 
 <script>
 let matchingPairIndex = 2;
+
+function updateMatchingPoints() {
+    const container = document.getElementById('matchingPairsContainer');
+    const pairCount = container.children.length;
+    const pointsInput = document.getElementById('matchingPoints');
+    if (pointsInput) {
+        pointsInput.value = pairCount;
+    }
+}
+
 function addMatchingPair() {
     const container = document.getElementById('matchingPairsContainer');
     const pairDiv = document.createElement('div');
@@ -114,11 +128,28 @@ function addMatchingPair() {
         <i class="fas fa-arrows-alt-h text-gray-400"></i>
         <input type="text" name="pairs[${matchingPairIndex}][right]" placeholder="Right match ${matchingPairIndex + 1}" required
             class="flex-1 px-4 py-2 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-emerald-50">
-        <button type="button" onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-700">
+        <button type="button" onclick="removeMatchingPair(this)" class="text-red-600 hover:text-red-700">
             <i class="fas fa-times"></i>
         </button>
     `;
     container.appendChild(pairDiv);
     matchingPairIndex++;
+    updateMatchingPoints();
 }
+
+function removeMatchingPair(button) {
+    const container = document.getElementById('matchingPairsContainer');
+    // Don't allow removal if only 2 pairs remain (minimum)
+    if (container.children.length > 2) {
+        button.parentElement.remove();
+        updateMatchingPoints();
+    } else {
+        alert('A matching question must have at least 2 pairs.');
+    }
+}
+
+// Update points when form is shown
+document.addEventListener('DOMContentLoaded', function() {
+    updateMatchingPoints();
+});
 </script>

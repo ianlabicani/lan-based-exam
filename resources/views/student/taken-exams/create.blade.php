@@ -136,9 +136,37 @@ function examInterface() {
         isSubmitting: false,
         showSubmitModal: false,
 
-        // Timer
-        timeRemaining: {{ $exam->time_limit ? $exam->time_limit * 60 : 3600 }}, // in seconds
-        totalTime: {{ $exam->time_limit ? $exam->time_limit * 60 : 3600 }},
+        // Timer - Calculate based on when student started the exam
+        timeRemaining: @php
+            // Calculate the exam's total duration (from starts_at to ends_at)
+            $startsAt = \Carbon\Carbon::parse($exam->starts_at);
+            $endsAt = \Carbon\Carbon::parse($exam->ends_at);
+            $startedAt = \Carbon\Carbon::parse($takenExam->started_at);
+            $now = now();
+
+            // Total exam duration in seconds
+            $examDuration = $startsAt->diffInSeconds($endsAt);
+
+            // How long has the student been working? (from when they started until now)
+            $elapsedTime = $startedAt->diffInSeconds($now);
+
+            // Time remaining based on when they started
+            $timeFromStart = max(0, $examDuration - $elapsedTime);
+
+            // Also check time until exam actually ends
+            $timeUntilExamEnds = $now->diffInSeconds($endsAt, false);
+
+            // If exam has ended, time is 0
+            if ($timeUntilExamEnds < 0) {
+                $timeRemaining = 0;
+            } else {
+                // Use whichever is less (prevents going over exam end time)
+                $timeRemaining = min($timeFromStart, $timeUntilExamEnds);
+            }
+
+            echo max(0, $timeRemaining); // Ensure non-negative
+        @endphp, // in seconds
+        totalTime: {{ \Carbon\Carbon::parse($exam->starts_at)->diffInSeconds(\Carbon\Carbon::parse($exam->ends_at)) }},
         timerInterval: null,
 
         // Activity monitoring
@@ -273,11 +301,18 @@ function examInterface() {
         },
 
         startTimer() {
+            // Log initial time for debugging
+            console.log('Timer started. Initial time remaining:', this.timeRemaining, 'seconds');
+            console.log('Total exam time:', this.totalTime, 'seconds');
+
             this.timerInterval = setInterval(() => {
-                this.timeRemaining--;
+                if (this.timeRemaining > 0) {
+                    this.timeRemaining--;
+                }
 
                 if (this.timeRemaining <= 0) {
                     clearInterval(this.timerInterval);
+                    console.log('Time is up! Auto-submitting...');
                     this.autoSubmit();
                 }
             }, 1000);

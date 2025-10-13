@@ -267,8 +267,26 @@ class ExamController extends Controller
                 return 0;
 
             case 'matching':
-                // For now, exact match required
-                return $studentAnswer === $item->pairs ? $item->points : 0;
+                // Score each correct pair individually (1 point per pair)
+                if (!is_string($studentAnswer)) {
+                    return 0;
+                }
+
+                $studentPairs = json_decode($studentAnswer, true);
+                if (!is_array($studentPairs) || !is_array($item->pairs)) {
+                    return 0;
+                }
+
+                $correctCount = 0;
+                foreach ($studentPairs as $leftIndex => $rightIndex) {
+                    // Check if this pair is correct
+                    if (isset($item->pairs[$leftIndex]) && $item->pairs[$leftIndex]['right'] === $item->pairs[$rightIndex]['right']) {
+                        $correctCount++;
+                    }
+                }
+
+                // Each pair is worth 1 point
+                return $correctCount;
 
             default:
                 return 0;

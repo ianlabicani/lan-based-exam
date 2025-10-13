@@ -114,7 +114,25 @@ class TakenExamAnswer extends Model
                 return $expected === $student;
 
             case 'matching':
-                return $this->answer === $correctAnswer;
+                // For matching, we can't use binary correct/incorrect since each pair scores individually
+                // This method returns true only if ALL pairs are correct (for display purposes)
+                if (!is_string($this->answer)) {
+                    return false;
+                }
+
+                $studentPairs = json_decode($this->answer, true);
+                if (!is_array($studentPairs) || !is_array($correctAnswer)) {
+                    return false;
+                }
+
+                // Check if all pairs match exactly
+                foreach ($studentPairs as $leftIndex => $rightIndex) {
+                    if (!isset($correctAnswer[$leftIndex]) || $correctAnswer[$leftIndex]['right'] !== $correctAnswer[$rightIndex]['right']) {
+                        return false;
+                    }
+                }
+
+                return true;
 
             case 'fillblank':
             case 'fill_blank':

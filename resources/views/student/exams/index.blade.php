@@ -135,11 +135,23 @@
                                 $now = \Carbon\Carbon::now();
                                 $hoursRemaining = $now->diffInHours($endsAt);
                                 $minutesRemaining = $now->diffInMinutes($endsAt) % 60;
+
+                                // Calculate exam duration (from starts_at to ends_at)
+                                $startsAt = \Carbon\Carbon::parse($exam->starts_at);
+                                $durationMinutes = $startsAt->diffInMinutes($endsAt);
+                                $durationHours = floor($durationMinutes / 60);
+                                $durationMins = $durationMinutes % 60;
                             @endphp
+                            <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div class="flex items-center space-x-2 text-blue-800 text-sm">
+                                    <i class="fas fa-clock"></i>
+                                    <span class="font-semibold">Exam Duration: {{ $durationHours }}h {{ $durationMins }}m</span>
+                                </div>
+                            </div>
                             <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                                 <div class="flex items-center space-x-2 text-yellow-800 text-sm">
                                     <i class="fas fa-exclamation-triangle"></i>
-                                    <span class="font-semibold">Time Remaining: {{ $hoursRemaining }}h {{ $minutesRemaining }}m</span>
+                                    <span class="font-semibold">Available Until: {{ $hoursRemaining }}h {{ $minutesRemaining }}m</span>
                                 </div>
                             </div>
                         @endif
