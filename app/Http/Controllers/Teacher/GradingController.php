@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
 use App\Models\Exam;
+use App\Models\ExamActivityLog;
 use App\Models\TakenExam;
 use App\Models\TakenExamAnswer;
 use Illuminate\Http\Request;
@@ -73,6 +74,11 @@ class GradingController extends Controller
                 return [$itemId => true];
             });
 
+        // Load activity logs for this exam session
+        $activityLogs = ExamActivityLog::where('taken_exam_id', $takenExam->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         return view('teacher.grading.show', compact(
             'takenExam',
             'exam',
@@ -84,7 +90,8 @@ class GradingController extends Controller
             'pendingGradingItems',
             'autoGradedScore',
             'manualGradedScore',
-            'gradedItems'
+            'gradedItems',
+            'activityLogs'
         ));
     }
 

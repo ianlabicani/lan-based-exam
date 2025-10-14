@@ -400,6 +400,17 @@
                     @endforeach
                 </div>
 
+                <!-- Activity Logs Section -->
+                <div class="mt-6">
+                    @include('partials.activity-logs', [
+                        'activityLogs' => $activityLogs,
+                        'takenExam' => $takenExam,
+                        'title' => 'Student Activity Log',
+                        'showStudentInfo' => true
+                    ])
+                </div>
+
+
             </div>
 
             <!-- Sidebar -->
@@ -667,6 +678,7 @@ function gradingPanel() {
     }
 }
 </script>
+
 
 <style>
 [x-cloak] { display: none !important; }

@@ -146,7 +146,8 @@
 
             echo max(0, $timeRemaining);
         @endphp,
-        totalTime: {{ \Carbon\Carbon::parse($exam->starts_at)->diffInSeconds(\Carbon\Carbon::parse($exam->ends_at)) }}
+        totalTime: {{ \Carbon\Carbon::parse($exam->starts_at)->diffInSeconds(\Carbon\Carbon::parse($exam->ends_at)) }},
+        activityLogging: true  // Enable activity monitoring
     };
 </script>
 <script src="/js/exam-interface.js"></script>

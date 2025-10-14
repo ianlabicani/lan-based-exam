@@ -23,7 +23,10 @@
             totalTime: data.totalTime || 0,
             timerInterval: null,
 
-            // Activity (removed)
+            // Activity monitoring
+            activityLoggingEnabled: data.activityLogging || false,
+            tabSwitchCount: 0,
+            windowBlurCount: 0,
 
             init() {
                 // Load saved answers
@@ -36,6 +39,11 @@
                 });
 
                 this.startTimer();
+
+                // Setup activity monitoring if enabled
+                if (this.activityLoggingEnabled) {
+                    this.setupActivityMonitoring();
+                }
 
                 if (typeof this.debounce !== "function") {
                     this.debounce = (func, wait) => {
@@ -316,7 +324,46 @@
                 }
             },
 
-            // Activity monitoring removed
+            // Activity monitoring
+            setupActivityMonitoring() {
+                document.addEventListener("visibilitychange", () => {
+                    if (document.hidden) {
+                        this.logActivity("visibility_change");
+                    }
+                });
+                window.addEventListener("blur", () => {
+                    this.windowBlurCount++;
+                    this.logActivity("window_blur");
+                });
+            },
+
+            async logActivity(eventType) {
+                if (!this.activityLoggingEnabled) return;
+
+                try {
+                    const csrf = document.querySelector(
+                        'meta[name="csrf-token"]'
+                    );
+                    if (!csrf) return;
+
+                    await fetch(
+                        `/student/taken-exams/${this.takenExamId}/activity`,
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "X-CSRF-TOKEN": csrf.content,
+                            },
+                            body: JSON.stringify({
+                                event_type: eventType,
+                                timestamp: new Date().toISOString(),
+                            }),
+                        }
+                    );
+                } catch (e) {
+                    /* silent */
+                }
+            },
         };
     }
 

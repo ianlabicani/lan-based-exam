@@ -357,6 +357,14 @@
             </div>
         </div>
 
+        <!-- Activity Logs Section -->
+        @include('partials.activity-logs', [
+            'activityLogs' => $activityLogs,
+            'takenExam' => $takenExam,
+            'title' => 'Your Exam Activity',
+            'showStudentInfo' => false
+        ])
+
         <!-- Action Buttons -->
         <div class="mt-6 flex justify-between">
             <a href="{{ route('student.exams.index') }}"

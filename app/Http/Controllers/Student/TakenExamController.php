@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Models\Exam;
+use App\Models\ExamActivityLog;
 use App\Models\TakenExam;
 use App\Models\TakenExamAnswer;
 use Illuminate\Http\Request;
@@ -157,13 +158,19 @@ class TakenExamController extends Controller
             ? round(($takenExam->total_points / $exam->total_points) * 100, 2)
             : 0;
 
+        // Load activity logs for this exam session
+        $activityLogs = ExamActivityLog::where('taken_exam_id', $takenExam->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         return view('student.taken-exams.show', compact(
             'exam',
             'takenExam',
             'totalQuestions',
             'answeredQuestions',
             'correctAnswers',
-            'percentage'
+            'percentage',
+            'activityLogs'
         ));
     }
 
@@ -338,16 +345,17 @@ class TakenExamController extends Controller
             'timestamp' => 'required|date',
         ]);
 
-        // Log the activity (you can create a separate ActivityLog model if needed)
-        Log::info('Exam Activity', [
+        // Store activity in database
+        ExamActivityLog::create([
             'taken_exam_id' => $takenExam->id,
-            'user_id' => $user->id,
+            'student_id' => $user->id,
             'event_type' => $validated['event_type'],
-            'timestamp' => $validated['timestamp'],
+            'details' => [
+                'timestamp' => $validated['timestamp'],
+                'user_agent' => $request->userAgent(),
+                'ip_address' => $request->ip(),
+            ],
         ]);
-
-        // Optionally, store in database
-        // ActivityLog::create([...]);
 
         return response()->json([
             'success' => true,
