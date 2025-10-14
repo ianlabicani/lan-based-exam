@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
 use App\Models\Exam;
+use App\Models\ExamActivityLog;
 use App\Models\TakenExam;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -29,6 +30,7 @@ class TakenExamController extends Controller
             ->map(function ($takenExam) use ($exam) {
                 // Compare answers - use already loaded exam.items
                 $takenExam->answer_comparison = $this->compareAnswers($exam->items, $takenExam->answers);
+
                 return $takenExam;
             });
 
@@ -96,7 +98,7 @@ class TakenExamController extends Controller
             return [
                 'id' => $item->id,
                 'question' => strlen($item->question) > 80
-                    ? substr($item->question, 0, 77) . '...'
+                    ? substr($item->question, 0, 77).'...'
                     : $item->question,
                 'full_question' => $item->question,
                 'type' => $item->type,
@@ -174,6 +176,7 @@ class TakenExamController extends Controller
             $percentage = $exam->total_points > 0
                 ? ($takenExam->total_points / $exam->total_points) * 100
                 : 0;
+
             return $percentage >= 75; // Consider 75% as passing
         })->count();
 
@@ -214,10 +217,15 @@ class TakenExamController extends Controller
             ->where('exam_id', $exam->id)
             ->findOrFail($takenExamId);
 
+        // Load activity logs for this taken exam
+        $activityLogs = ExamActivityLog::where('taken_exam_id', $takenExam->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         // Compare exam items with student answers - use already loaded exam.items
         $comparison = $this->compareAnswers($exam->items, $takenExam->answers);
 
-        return view('teacher.taken-exams.show', compact('exam', 'takenExam', 'comparison'));
+        return view('teacher.taken-exams.show', compact('exam', 'takenExam', 'comparison', 'activityLogs'));
     }
 
     /**
@@ -318,18 +326,18 @@ class TakenExamController extends Controller
             case 'matching':
                 // For matching, check if student answer matches expected pairs
                 // But note: actual scoring counts each pair individually
-                if (!is_string($studentAnswer)) {
+                if (! is_string($studentAnswer)) {
                     return false;
                 }
 
                 $studentPairs = json_decode($studentAnswer, true);
-                if (!is_array($studentPairs) || !is_array($correctAnswer)) {
+                if (! is_array($studentPairs) || ! is_array($correctAnswer)) {
                     return false;
                 }
 
                 // Check if all pairs match
                 foreach ($studentPairs as $leftIndex => $rightIndex) {
-                    if (!isset($correctAnswer[$leftIndex]) || $correctAnswer[$leftIndex]['right'] !== $correctAnswer[$rightIndex]['right']) {
+                    if (! isset($correctAnswer[$leftIndex]) || $correctAnswer[$leftIndex]['right'] !== $correctAnswer[$rightIndex]['right']) {
                         return false;
                     }
                 }

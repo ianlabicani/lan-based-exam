@@ -358,12 +358,15 @@
         </div>
 
         <!-- Activity Logs Section -->
-        @include('partials.activity-logs', [
-            'activityLogs' => $activityLogs,
-            'takenExam' => $takenExam,
-            'title' => 'Your Exam Activity',
-            'showStudentInfo' => false
-        ])
+         <div class="mt-2">
+
+             @include('partials.activity-logs', [
+                'activityLogs' => $activityLogs,
+                'takenExam' => $takenExam,
+                'title' => 'Your Exam Activity',
+                'showStudentInfo' => false
+                ])
+            </div>
 
         <!-- Action Buttons -->
         <div class="mt-6 flex justify-between">

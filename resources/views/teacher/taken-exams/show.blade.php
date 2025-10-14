@@ -207,6 +207,17 @@
                         </div>
                     </div>
                     @endforeach
+
+                    <!-- Activity Logs Section -->
+                    <div class="mt-6">
+                        @include('partials.activity-logs', [
+                            'activityLogs' => $activityLogs,
+                            'takenExam' => $takenExam,
+                            'title' => 'Student Activity Log',
+                            'showStudentInfo' => true
+                        ])
+                    </div>
+
                 </div>
 
             </div>
