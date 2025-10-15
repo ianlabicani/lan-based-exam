@@ -268,6 +268,63 @@ class TakenExamController extends Controller
     }
 
     /**
+     * Save multiple answers in batch for better performance
+     */
+    public function saveAnswersBatch(Request $request, $id)
+    {
+        $user = Auth::user();
+
+        $takenExam = TakenExam::where('user_id', $user->id)
+            ->findOrFail($id);
+
+        // Check if already submitted
+        if ($takenExam->submitted_at) {
+            return response()->json(['error' => 'Exam already submitted'], 403);
+        }
+
+        $validated = $request->validate([
+            'answers' => 'required|array',
+            'answers.*.item_id' => 'required|exists:exam_items,id',
+            'answers.*.answer' => 'required',
+        ]);
+
+        // Use transaction for batch insert/update
+        DB::beginTransaction();
+        try {
+            $savedCount = 0;
+
+            foreach ($validated['answers'] as $answerData) {
+                TakenExamAnswer::updateOrCreate(
+                    [
+                        'taken_exam_id' => $takenExam->id,
+                        'exam_item_id' => $answerData['item_id'],
+                    ],
+                    [
+                        'answer' => $answerData['answer'],
+                    ]
+                );
+                $savedCount++;
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Answers saved successfully',
+                'saved_count' => $savedCount,
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Batch save failed: ' . $e->getMessage());
+
+            return response()->json([
+                'error' => 'Failed to save answers',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Submit exam
      */
     public function submit(Request $request, $id)

@@ -32,6 +32,7 @@ Route::middleware(['auth', 'verified'])->prefix('student')->name('student.')->gr
         // API endpoints
         Route::post('/{id}/start', [TakenExamController::class, 'start'])->name('start');
         Route::post('/{id}/save-answer', [TakenExamController::class, 'saveAnswer'])->name('save-answer');
+        Route::post('/{id}/save-answers-batch', [TakenExamController::class, 'saveAnswersBatch'])->name('save-answers-batch');
         Route::post('/{id}/submit', [TakenExamController::class, 'submit'])->name('submit');
         Route::post('/{id}/activity', [TakenExamController::class, 'logActivity'])->name('activity');
     });

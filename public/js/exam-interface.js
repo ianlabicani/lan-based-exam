@@ -28,6 +28,11 @@
             tabSwitchCount: 0,
             windowBlurCount: 0,
 
+            // Batch saving
+            pendingAnswers: new Set(),
+            batchSaveInterval: null,
+            batchSaveDelay: 8000, // 8 seconds
+
             init() {
                 // Load saved answers
                 this.loadSavedAnswers();
@@ -39,6 +44,9 @@
                 });
 
                 this.startTimer();
+
+                // Setup batch saving
+                this.startBatchSaving();
 
                 // Setup activity monitoring if enabled
                 if (this.activityLoggingEnabled) {
@@ -58,8 +66,9 @@
                     };
                 }
 
+                // Keep debounced save for immediate critical saves
                 this.debouncedSave = this.debounce(
-                    () => this.saveAnswer(),
+                    () => this.saveAnswerImmediate(),
                     1000
                 );
             },
@@ -205,7 +214,7 @@
             updateMatchingAnswer(questionId, pairIndex, value) {
                 if (!this.answers[questionId]) this.answers[questionId] = {};
                 this.answers[questionId][pairIndex] = value;
-                this.saveAnswer();
+                this.queueAnswerForBatchSave(questionId);
             },
             populateMatchingDropdown(selectEl, questionId, pairIndex, pairs) {
                 const shuffled = this.getShuffledRightOptions(pairs);
@@ -229,35 +238,78 @@
                 return s;
             },
 
-            // Save
-            async saveAnswer() {
-                if (
-                    !this.currentQuestion ||
-                    !this.answers[this.currentQuestion.id]
-                )
-                    return;
-                this.isSaving = true;
-                let answerToSave = this.answers[this.currentQuestion.id];
-                if (
-                    this.currentQuestion.type === "matching" &&
-                    typeof answerToSave === "object"
-                ) {
-                    const idxAns = {};
-                    for (const [l, rt] of Object.entries(answerToSave)) {
-                        const rid = this.currentQuestion.pairs.findIndex(
-                            (p) => p.right === rt
-                        );
-                        if (rid !== -1) idxAns[l] = rid.toString();
+            // Batch Saving System
+            startBatchSaving() {
+                // Save pending answers every 8 seconds
+                this.batchSaveInterval = setInterval(() => {
+                    if (this.pendingAnswers.size > 0) {
+                        this.saveBatch();
                     }
-                    answerToSave = JSON.stringify(idxAns);
+                }, this.batchSaveDelay);
+
+                // Save on page unload
+                window.addEventListener("beforeunload", () => {
+                    if (this.pendingAnswers.size > 0) {
+                        this.saveBatchSync(); // Synchronous save before leaving
+                    }
+                });
+            },
+
+            queueAnswerForBatchSave(questionId) {
+                this.pendingAnswers.add(questionId);
+                this.isSaving = true; // Show saving indicator
+            },
+
+            async saveBatch() {
+                if (this.pendingAnswers.size === 0) return;
+
+                const answersToBatch = [];
+                const questionIds = Array.from(this.pendingAnswers);
+
+                // Prepare all pending answers
+                for (const questionId of questionIds) {
+                    const question = this.questions.find(
+                        (q) => q.id === questionId
+                    );
+                    if (!question || !this.answers[questionId]) continue;
+
+                    let answerToSave = this.answers[questionId];
+
+                    // Handle matching type conversion
+                    if (
+                        question.type === "matching" &&
+                        typeof answerToSave === "object"
+                    ) {
+                        const idxAns = {};
+                        for (const [l, rt] of Object.entries(answerToSave)) {
+                            const rid = question.pairs.findIndex(
+                                (p) => p.right === rt
+                            );
+                            if (rid !== -1) idxAns[l] = rid.toString();
+                        }
+                        answerToSave = JSON.stringify(idxAns);
+                    }
+
+                    answersToBatch.push({
+                        item_id: questionId,
+                        answer: answerToSave,
+                    });
                 }
+
+                if (answersToBatch.length === 0) {
+                    this.pendingAnswers.clear();
+                    this.isSaving = false;
+                    return;
+                }
+
                 try {
                     const csrf = document.querySelector(
                         'meta[name="csrf-token"]'
                     );
                     if (!csrf) return;
+
                     const res = await fetch(
-                        `/student/taken-exams/${this.takenExamId}/save-answer`,
+                        `/student/taken-exams/${this.takenExamId}/save-answers-batch`,
                         {
                             method: "POST",
                             headers: {
@@ -265,23 +317,122 @@
                                 "X-CSRF-TOKEN": csrf.content,
                             },
                             body: JSON.stringify({
-                                item_id: this.currentQuestion.id,
-                                answer: answerToSave,
+                                answers: answersToBatch,
                             }),
                         }
                     );
-                    if (!res.ok) throw new Error("save failed");
+
+                    if (res.ok) {
+                        // Clear successfully saved answers from pending queue
+                        this.pendingAnswers.clear();
+                    }
                 } catch (e) {
-                    /* silent */
+                    console.error("Batch save failed:", e);
+                    // Don't clear pending answers on error - will retry on next interval
                 } finally {
                     setTimeout(() => {
-                        this.isSaving = false;
+                        if (this.pendingAnswers.size === 0) {
+                            this.isSaving = false;
+                        }
                     }, 500);
                 }
             },
 
+            saveBatchSync() {
+                // Synchronous save for page unload (uses sendBeacon or XHR sync)
+                if (this.pendingAnswers.size === 0) return;
+
+                const answersToBatch = [];
+                const questionIds = Array.from(this.pendingAnswers);
+
+                for (const questionId of questionIds) {
+                    const question = this.questions.find(
+                        (q) => q.id === questionId
+                    );
+                    if (!question || !this.answers[questionId]) continue;
+
+                    let answerToSave = this.answers[questionId];
+
+                    if (
+                        question.type === "matching" &&
+                        typeof answerToSave === "object"
+                    ) {
+                        const idxAns = {};
+                        for (const [l, rt] of Object.entries(answerToSave)) {
+                            const rid = question.pairs.findIndex(
+                                (p) => p.right === rt
+                            );
+                            if (rid !== -1) idxAns[l] = rid.toString();
+                        }
+                        answerToSave = JSON.stringify(idxAns);
+                    }
+
+                    answersToBatch.push({
+                        item_id: questionId,
+                        answer: answerToSave,
+                    });
+                }
+
+                const csrf = document.querySelector('meta[name="csrf-token"]');
+                if (!csrf) return;
+
+                const data = JSON.stringify({ answers: answersToBatch });
+
+                // Try sendBeacon first (modern browsers)
+                const blob = new Blob([data], { type: "application/json" });
+                const sent = navigator.sendBeacon(
+                    `/student/taken-exams/${this.takenExamId}/save-answers-batch?_token=${csrf.content}`,
+                    blob
+                );
+
+                if (!sent) {
+                    // Fallback to synchronous XHR
+                    const xhr = new XMLHttpRequest();
+                    xhr.open(
+                        "POST",
+                        `/student/taken-exams/${this.takenExamId}/save-answers-batch`,
+                        false
+                    );
+                    xhr.setRequestHeader("Content-Type", "application/json");
+                    xhr.setRequestHeader("X-CSRF-TOKEN", csrf.content);
+                    xhr.send(data);
+                }
+            },
+
+            // Legacy individual save (kept for immediate critical saves if needed)
+            async saveAnswerImmediate() {
+                if (
+                    !this.currentQuestion ||
+                    !this.answers[this.currentQuestion.id]
+                )
+                    return;
+
+                // Add to batch queue instead
+                this.queueAnswerForBatchSave(this.currentQuestion.id);
+            },
+
+            // Save wrapper - now queues for batch
+            async saveAnswer() {
+                if (
+                    !this.currentQuestion ||
+                    !this.answers[this.currentQuestion.id]
+                )
+                    return;
+                this.queueAnswerForBatchSave(this.currentQuestion.id);
+            },
+
             // Submit
             async submitExam() {
+                // Save any pending answers before submitting
+                if (this.pendingAnswers.size > 0) {
+                    await this.saveBatch();
+                }
+
+                // Clear the batch save interval
+                if (this.batchSaveInterval) {
+                    clearInterval(this.batchSaveInterval);
+                }
+
                 this.isSubmitting = true;
                 try {
                     const csrf = document.querySelector(
